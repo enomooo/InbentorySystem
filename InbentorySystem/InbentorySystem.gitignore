@@ -1,0 +1,10 @@
+﻿# Visual Studio Project
+[Bb]in/
+[Oo]bj/
+*.exe
+*.pdb
+*.user
+*.suo
+
+# パスワードを含むファイルは除外
+appsettings.Development.json
