@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant U as ユーザー
+    participant MainF as メインメニュー
+    participant ChildF as 各管理メニュー
+
+    title 画面遷移と復帰のルール
+
+    U->>MainF: アプリケーション起動
+    MainF->>MainF: フォーム初期化（メニュー表示）
+    
+    U->>MainF: 各管理メニューのボタンクリック
+    MainF->>ChildF: 各管理メニュー起動
+    activate ChildF
+
+    U-->>ChildF: 各種操作
+
+    U->>ChildF: [メインメニューに戻る]ボタンをクリック
+
+    ChildF->>MainF: 各管理メニューを閉じて、メインメニューに戻る
+    deactivate ChildF

@@ -1,0 +1,43 @@
+erDiagram
+    %% 関連の定義 (Relationships)
+    M_SHOHIN ||--o{ T_ZAIKO : 持つ
+    M_SHOHIN ||--o{ T_SHIIRE : 仕入れられる
+    M_SHOHIN ||--o{ T_URIAGE : 売られる
+    M_SHIIRESAKI ||--o{ M_SHOHIN : 提供する
+    M_SHIIRESAKI ||--o{ T_SHIIRE : 行う
+
+    %% エンティティの定義 (Entities)
+    M_SHOHIN {
+        varchar(128) shohin_code PK "商品コード"
+        varchar(128) shohin_mei_kanji "商品名(漢字)"
+        varchar(128) shohin_mei_kana "商品名(かな)"
+        int(8) shiirene "仕入値"
+        int(8) urine "売値"
+        varchar(4) siiresaki_code FK "仕入先コード"
+    }
+
+    T_ZAIKO {
+        varchar(128) shohin_code PK,FK "商品コード"
+        int(3) suryo "数量"
+    }
+
+    M_SHIIRESAKI {
+        varchar(4) shiiresaki_code PK "仕入先コード"
+        varchar(128) shiiresaki_mei_kanji "仕入先名(漢字)"
+        varchar(128) shiiresaki_mei_kana "仕入先名(かな)"
+    }
+
+    T_SHIIRE {
+        int(5) shiire_no PK "仕入番号"
+        date shiire_bi "仕入日"
+        varchar(128) shohin_code FK "商品コード"
+        varchar(4) shiiresaki_code FK "仕入先コード"
+        int(3) suryo "数量"
+    }
+
+    T_URIAGE {
+        int(5) uriage_no PK "売上番号"
+        date uriage_bi "売上日"
+        varchar(128) shohin_code FK "商品コード"
+        int(3) suryo "数量"
+    }
