@@ -1,6 +1,5 @@
 using Npgsql;
 using InbentorySystem.Components;
-using InbentorySystem.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+
+/*
 // appsettings.json‚©‚çPostgreSQL‚ÌÚ‘±•¶š—ñ‚ğæ“¾
 var connectionString = builder.Configuration.GetConnectionString("PostgreConnection");
 
@@ -17,6 +18,8 @@ builder.Services.AddScoped<NpgsqlConnection>(_ =>
     new NpgsqlConnection(connectionString));
 
 builder.Services.AddScoped<ShohinRepository>();
+*/
+
 
 var app = builder.Build();
 

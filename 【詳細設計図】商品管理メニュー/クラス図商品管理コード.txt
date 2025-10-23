@@ -1,0 +1,69 @@
+classDiagram
+    direction LR
+
+    class ShohinIndex{
+        <<Blazor Component>>
+        +List~ShohinModel~ ShohinList
+        +ShohinModel EditModel
+        +string SearchKeyword
+        +Task OnInitializedAsync()
+        +Task SearchAsync()
+        +Task RegisterAsync()
+        +Task UpdateAsync()
+        +Task DeleteAsync()
+        +void LoadForEdit(ShohinModel shohin)
+    }
+
+    class ShohinRepository{
+        <<Repository>>
+        -NpgsqlConnection _connection
+        +Task~List~ShohinModel~~ GetAllAsync()
+        +Task~List~ShohinModel~~ SearchAsync(string Keyword)
+        +Task RegisterAsync(ShohinModel shohin)
+        +Task UpdateAsync(ShohinModel shohin)
+        +Task DeleteAsync(string shohinCode)
+        +Task~bool~ CheckDuplicateCodeAsync(string shohinCode)
+    }
+
+    class ShohinModel{
+        <<Entity/Model>>
+        +string ShohinCode
+        +string ShohinMeiKanji
+        +string ShohinMeiKana
+        +decimal ShiireKakaku
+        +decimal HanbaiKakaku
+        +string ShiiresakiCode
+    }
+
+    class ZaikoModel{
+        <<Entity/Model>>
+        +string ShohinCode
+        +int Suuryo
+    }
+
+    class ShiiresakiModel{
+        <<Entity/Model>>
+        +string ShiiresakiCode
+        +string ShiiresakiMei
+    }
+
+    class T_Zaiko{
+        <<DB Table>>
+        +PK_ShohinCode : VARCHAR(4)
+        +ShohinMeiKanji : VARCHAR(128)
+        +ShohinMeiKana : VARCHAR(128)
+        +ShiireKakaku : DECIMAL
+        +HanbaiKakaku : DECIMAL
+        +FK_ShiiresakiCode : VARCHAR(4)
+    }
+
+    M_Shohin "1" -- "1" T_Zaiko : 在庫は商品に依存 
+    M_Shohin "many" --> "1" ShiiresakiModel : 仕入先を参照 (FK)
+
+    ShohinIndex ..> ShohinRepository : 使用（DI）
+    ShohinRepository..>ShohinModel : データの送受信
+    ShohinRepository..>M_Shohin : SQL操作
+    ShohinREpository..>T_Zaiko : SQL操作（登録/削除時）
+
+    ShohinModel "1" -- "1" ZaikoModel : 関連データ（表示用）
+    ShohinModel "many" --> "1" ShiiresakiModel : 参照

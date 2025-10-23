@@ -1,0 +1,47 @@
+sequenceDiagram
+    participant U as ユーザー(ブラウザ)
+    participant IndexComp as ShohinIndex.razor
+    participant Repo as ShohinRepository
+    participant DB as DB(PostgreSQL)
+    
+    title 商品管理：修正（更新）シーケンス
+
+    %% -------------------------------------
+    %% 修正対象の選択とフォームへのロード
+    %% -------------------------------------
+    U->>IndexComp: 一覧から商品を選択（クリック）
+    activate IndexComp
+
+    Note over IndexComp: 選択された商品のデータを取得（画面表示データから）
+    IndexComp->>IndexComp: 登録フォームにデータをロード（フォーム表示を「更新モード」に切り替え）
+    IndexComp-->>U: フォームに既存値が表示される
+
+    %% -------------
+    %% 修正と更新処理
+    %% -------------
+    U->>IndexComp: 商品情報を修正
+    U->>IndexComp: [更新]ボタン クリック（更新処理のトリガー）
+
+    Note over IndexComp: 入力項目不足チェック
+    alt 入力不足がある場合
+        IndexComp-->>U: アラート"入力項目が不足しています"
+    else 入力okの場合
+        IndexComp-->>Repo: 商品情報更新（UpdateAsync）
+        activate Repo
+        Repo->>DB: UPDATE M_SHOHIN SET ... WHERE ShohinCode = '[コード]'
+        activate DB
+        DB-->>Repo: 更新終了
+        deactivate DB
+        Repo-->>IndexComp: 更新成功
+        deactivate Repo
+
+        Note over IndexComp: フォームクリアと一覧表示
+        IndexComp->>IndexComp: 登録フォームをクリア（新規登録モードに戻す）
+        IndexComp->>Repo: 全件取得（GetAllAsync）
+        activate Repo
+        Repo->>DB: SELECT * FROM M_SHOHIN
+        DB-->>Repo: 全商品データ
+        deactivate Repo
+        IndexComp-->>U: 画面更新（全件一覧の再表示）
+    end
+    deactivate IndexComp

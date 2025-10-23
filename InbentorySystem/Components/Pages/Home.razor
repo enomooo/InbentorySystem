@@ -1,67 +1,23 @@
 ﻿@page "/"
-@using InbentorySystem.Data
-@using InbentorySystem.Data.Models
 
-// RepositoryをDIで注入
-@inject ShohinRepository ShohinRepo
+<PageTitle>在庫管理システム - メインメニュー</PageTitle>
 
-<PageTitle>商品リスト（DB接続テスト）</PageTitle>
+<div class="container mt-5">
+	<h1 class="mb-4">メインメニュー</h1>
 
-<h1>商品マスタ一覧（DB接続テスト）</h1>
+	
+	<div class="card p-3 mb-4">
+		@*ボタン配置*@
+		<div class="d-grid gap-4">
+			<a href="/shohin/index" class="btn btn-primary btn-lg">商品管理</a>
+			<a href="/shiire/index" class="btn btn-primary btn-lg">仕入管理</a>
+			<a href="/uriage/index" class="btn btn-primary btn-lg">売上管理</a>
+			<a href="/shiiresaki/index" class="btn btn-primary btn-lg">仕入先管理</a>
+			<a href="/reportmenu/index" class="btn btn-primary btn-lg">一覧表</a>
+		</div>
+	</div>
+</div>
 
-@if (shohinList == null)
-{
-	<p><em>データベースからデータを読み込み中・・・</em></p>
-}
-else if (shohinList.Count == 0)
-{
-	<p class="alert alert-warning">DB接続は成功しましたが、データはありませんでした。</p>
-}
-else
-{
-	<table class="table table-cordered">
-		<thead>
-			<tr>
-				<th>コード</th>
-				<th>商品名</th>
-				<th>仕入価格</th>
-				<th>販売価格</th>
-			</tr>
-		</thead>
-		<tbody>
-			@foreach (var shohin in shohinList)
-			{
-				<tr>
-					<td>@shohin.ShohinCode</td>
-					<td>@shohin.ShohinKanjiMei</td>
-					<td>@shohin.Siiirekakaku</td>
-					<td>@shohin.HanbaiKakaku</td>
-				</tr>
-			}
-		</tbody>
-	</table>
-}
-
-@code {
-	private List<ShohinModel>? shohinList;
-
-	/// <summary>
-	/// コンポーネント初期化時にDBからデータを取得
-	/// </summary>
-	/// <returns>shohinRepo</returns>
-	protected override async Task OnInitializedAsync()
-	{
-		// Repositoryを使ってデータを取得
-		try
-		{
-			shohinList = await ShohinRepo.GetAllAsync();
-		}
-		// DB接続エラーなどの例外をキャッチ
-		catch (Exception ex)
-		{
-			// 空のリストを設定してUIが壊れないようにする
-			shohinList = new List<ShohinModel>(); 
-			Console.Error.WriteLine($"☆★データベース接続エラー: {ex.Message}");
-		}
-	}
+@code{
+		// メインメニューはロジックなし
 }

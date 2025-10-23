@@ -1,0 +1,40 @@
+sequenceDiagram
+        participant U as ユーザー(ブラウザ)
+        participant IndexComp as ShohinIndex.razor
+        participant Repo as ShohinRepository
+        participant DB as DB(PostgreSQL)
+
+        title 商品管理：検索・登録・修正・削除
+
+         %% --------------------
+        %% 商品録処理  
+        %% --------------------
+        U->>IndexComp: 登録画面フォームにデータを入力
+        U->>IndexComp: 登録ボタン　クリック
+
+
+        alt 入力不足がある場合
+            IndexComp-->>U: "入力項目が不足しています"
+        else 入力okの場合
+            IndexComp->>Repo: 重複チェック（CheckDuplicateCodeAsync）
+            activate Repo
+            Repo->>DB: SELECT 1 FROM M_SHOHIN WHERE ShohinCode = '[コード]'
+            DB-->>Repo: 結果
+            deactivate Repo
+
+            alt 重複なしの場合
+                IndexComp->>Repo: 商品登録（RegisterAsync）
+                activate Repo
+                Repo->>DB: INSERT INTO M_SHOHIN, INSERT INTO T_ZAIKO
+                activate DB
+                DB-->>Repo: 登録完了
+                deactivate DB
+                Repo-->>IndexComp: 登録成功
+                deactivate Repo
+
+                Note over IndexComp: フォームクリアと一覧再表示
+                IndexComp->>IndexComp: 登録フォームをクリア
+                IndexComp->>IndexComp: 一覧を再取得・再表示
+                IndexComp-->>U: 画面更新
+            end
+        end
