@@ -1,0 +1,67 @@
+sequenceDiagram
+    participant U as ユーザー(ブラウザ)
+    participant IndexComp as ShohinIndex.razor
+    participant Repo as ShohinRepository
+    participant DB as DB(PostgreSQL)
+
+    title 商品管理：初期化と検索のシーケンス
+
+    %% --------------------
+    %% 画面アクセスと初期表示       
+    %% --------------------
+    U->>IndexComp: 画面アクセス（URL: /shohin/index）
+    activate IndexComp
+
+    Note over IndexComp: フォーム初期化
+
+    IndexComp-->>U: 画面表示
+
+    %% --------------------
+    %% 商品検索処理  
+    %% --------------------
+    U->>IndexComp: 商品名テキストボックスに入力
+    U->>IndexComp: 商品検索ボタン クリック
+
+    Note over IndexComp:キーワードのチェック
+
+    alt キーワードが空白の場合（全件表示の仕様）
+        IndexComp->>Repo: 全件取得(GetAllAsync)
+        activate Repo
+        Repo->>DB: SELECT * FROM M_SHOHIN LEFT JOIN T_ZAIKO ON ...
+        activate DB
+        DB-->>Repo: 全商品データ（List<ShohinModel>）
+        deactivate DB
+        Repo-->>IndexComp: 検索結果
+        deactivate Repo
+
+        Note over IndexComp: 検索結果をセッション等に一時保存
+        IndexComp->>U: **一覧表示画面**へ遷移（URL: /shohin/list?q=all）
+    
+    else キーワードが入力されている場合（絞り込み検索）
+        IndexComp->>Repo: 検索実行（SearchAsync）
+        activate Repo
+        Repo->>DB:SELECT * FROM M_SHOHIN WHERE ShohinMeiKanji LIKE '%[入力値]%'
+        activate DB
+        DB-->>Repo: 該当商品データ（List<ShohinModel>）
+        deactivate DB
+        Repo-->>IndexComp: 検索結果
+        deactivate Repo
+
+        alt 該当商品がある場合
+            Note over IndexComp: 検索結果をセッション等に一時保存
+            IndexComp->>U: **一覧表示画面**へ遷移（URL: /shohin/list?q=...）
+        else 該当商品がない場合
+            IndexComp->>IndexComp: エラーメッセージを設定
+            IndexComp-->>U: "該当する商品はありませんでした"と**Index画面に表示**
+        end
+    end
+
+    %% --------------------
+    %% リセットボタンの処理
+    %% --------------------
+    U->>IndexComp: [リセット]ボタン クリック
+    
+    IndexComp->>IndexComp: 検索テキストボックスをクリア
+    IndexComp-->>U: 画面表示を更新
+
+    deactivate IndexComp %% 最後にまとめて非アクティブ化

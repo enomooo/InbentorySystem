@@ -19,10 +19,15 @@ sequenceDiagram
             IndexComp->>Repo: 重複チェック（CheckDuplicateCodeAsync）
             activate Repo
             Repo->>DB: SELECT 1 FROM M_SHOHIN WHERE ShohinCode = '[コード]'
-            DB-->>Repo: 結果
+            activate DB
+            DB-->>Repo: 結果 (重複True/False)
+            deactivate DB
+            Repo-->>IndexComp: 重複結果
             deactivate Repo
 
-            alt 重複なしの場合
+            alt 重複している場合
+                IndexComp->>U: "この商品コードは既に登録されています"**エラーページ**へ遷移
+            else 重複なしの場合
                 IndexComp->>Repo: 商品登録（RegisterAsync）
                 activate Repo
                 Repo->>DB: INSERT INTO M_SHOHIN, INSERT INTO T_ZAIKO

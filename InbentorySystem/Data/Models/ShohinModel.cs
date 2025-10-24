@@ -6,14 +6,15 @@ namespace InbentorySystem.Data.Models
     /// </summary>
     public class ShohinModel
     {
-        public string ShohinCode { get; set; } = string.Empty;
+        // M_SHOHINテーブルのカラムに対応するフィールド
+        public string ShohinCode { get; set; }
+        public string ShohinMeiKanji { get; set; }
+        public string ShohinMeiKana { get; set; }
+        public decimal ShiireKakaku { get; set; }
+        public decimal HanbaiKakaku { get; set; }
+        public string ShiiresakiCode { get; set; }
 
-        public string ShohinKanjiMei { get; set; } = string.Empty;
-
-        public string ShohinKanaMei { get; set; } = string.Empty;
-
-        public int Siiirekakaku { get; set; }
-
-        public int HanbaiKakaku { get; set; }
+        // Hack: DBのテーブルの定義と、ShohinModelクラスのフィールド定義を照合し、必要に応じてフィールドを追加・修正してください。
+        public int Suuryo { get; set; } = 0;
     }
 }

@@ -1,0 +1,77 @@
+sequenceDiagram
+    participant U as ユーザー(ブラウザ)
+    participant IndexComp as ShohinIndex.razor
+    participant SelectComp as ShohinDeleteSelect.razor
+    participant Repo as ShohinRepository
+    participant DB as DB(PostgreSQL)
+    
+    title 商品管理：削除シーケンス（最終版）
+
+    %% --------------------
+    %% 削除対象の検索 (IndexComp) - 変更なし
+    %% --------------------
+    U->>IndexComp: 商品名テキストボックスに入力
+    U->>IndexComp: [削除]ボタン クリック
+    activate IndexComp
+
+    Note over IndexComp: 検索キーワードチェック、エラー処理（検索機能に準ずる）
+    
+    IndexComp->>Repo: 検索実行（SearchAsync）
+    activate Repo
+    Repo->>DB: SELECT * FROM M_SHOHIN WHERE ShohinMeiKanji LIKE '%[入力値]%'
+    activate DB
+    DB-->>Repo: 該当商品データ
+    deactivate DB
+    Repo-->>IndexComp: 検索結果
+    deactivate Repo
+
+    alt 該当商品がない場合 (エラー)
+        IndexComp-->>U: "該当する商品はありませんでした"とIndex画面に表示
+    else 該当商品がある場合 (成功)
+        Note over IndexComp: 検索結果をセッション等に一時保存
+        IndexComp->>U: **削除選択画面**へ遷移（URL: /shohin/delete/select?q=...）
+        deactivate IndexComp
+    end
+
+    %% --------------------
+    %% 削除対象の選択と実行 (SelectComp)
+    %% --------------------
+    U->>SelectComp: 削除選択画面アクセス
+    activate SelectComp
+    
+    Note over SelectComp: 
+        検索結果を一覧表示し、各行に [削除]ボタン を付与。
+        **画面下部には常に [商品管理メニューに戻る] ボタンを配置**。
+
+    U->>SelectComp: 一覧の**削除ボタン**をクリック
+
+    Note over SelectComp: 
+        **確認メッセージ表示**:
+        「削除ボタンを押すと元に戻せませんが本当に削除しますがよろしいですか？」
+        ボタン: [削除]ボタン
+
+    alt Uが[削除]ボタンをクリックし、削除を承認した場合
+        SelectComp->>Repo: 商品削除（DeleteAsync）
+        activate Repo
+        
+        Note over Repo: トランザクション処理を開始 (T_ZAIKO, M_SHOHINから削除)
+        
+        Repo->>DB: DELETE FROM T_ZAIKO WHERE ShohinCode = '[コード]'
+        Repo->>DB: DELETE FROM M_SHOHIN WHERE ShohinCode = '[コード]'
+        activate DB
+        DB-->>Repo: 削除完了
+        deactivate DB
+        
+        Note over Repo: トランザクションをコミット
+        Repo-->>SelectComp: 削除成功
+        deactivate Repo
+
+        Note over SelectComp: 削除完了メッセージを表示
+        SelectComp->>U: **検索画面へリダイレクト** (/shohin/index)
+        deactivate SelectComp
+
+    else Uが[商品管理メニューに戻る]ボタンをクリック (キャンセルパス)
+        Note over SelectComp: 削除をキャンセルし、メイン画面へリダイレクト
+        SelectComp->>U: **検索画面へリダイレクト** (/shohin/index)
+        deactivate SelectComp
+    end
