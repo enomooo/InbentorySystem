@@ -1,36 +1,32 @@
 using Npgsql;
 using InbentorySystem.Components;
+// ShohinRepositoryの名前空間
+using InbentorySystem.Data;
 
+// Webアプリケーションを構築するためのホストビルダーを作成
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// BlazorコンポーネントのサービスをDIコンテナに登録（Blazor Web Appを使うテンプレ）
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-
-/*
-// appsettings.jsonからPostgreSQLの接続文字列を取得
-var connectionString = builder.Configuration.GetConnectionString("PostgreConnection");
-
-// NpgsqlConnectionをDIコンテナに登録
-// アプリケーション内でDB接続が必要なときにインスタンスが提供される
-builder.Services.AddScoped<NpgsqlConnection>(_ =>
-    new NpgsqlConnection(connectionString));
-
+// ShohinRepositoryをDIコンテナへ登録
 builder.Services.AddScoped<ShohinRepository>();
-*/
 
-
+// アプリケーションインスタンスの構築
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// HTTPリクエストパイプラインの設定
+// もし開発環境以外の場合はエラーハンドラー
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+
+    // Hsts(HTTP Strict Transport Security)を使用し、ブラウザにHTTPS通信を強制
     app.UseHsts();
 }
 
+// HTTPリクエストをHTTPSにリダイレクト
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
