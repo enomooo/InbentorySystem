@@ -138,7 +138,7 @@
 	private enum ActionType { Search, Edit, Delete }
 
 	/// <summary>
-	/// 
+	///
 	/// </summary>
 	/// <param name="action"></param>
 	/// <param name="keyword"></param>
@@ -171,12 +171,13 @@
 				return;
 			}
 
-			// 検索結果がある場合、子ページへ遷移
+			// keywordがnull、空白ならall,それ以外ならURLエンコード
 			string query = string.IsNullOrWhiteSpace(keyword) ? "all" : Uri.EscapeDataString(keyword);
+
 			string targetUrl = action switch
 			{
 				ActionType.Search => $"/shohin/list?q={query}",
-				ActionType.Edit => $"/shohin/edit/select?q={query}",
+				ActionType.Edit => $"/shohin/edit?q={query}",
 				ActionType.Delete => $"/shohin/delete/select?q={query}",
 				_ => throw new InvalidOperationException()
 			};
