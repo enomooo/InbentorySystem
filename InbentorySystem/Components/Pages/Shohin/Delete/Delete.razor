@@ -37,8 +37,8 @@ else
 				<tr><th>商品コード</th><td>@Model.ShohinCode</td></tr>
 				<tr><th>商品名（漢字）</th><td>@Model.ShohinMeiKanji</td></tr>
 				<tr><th>商品名（かな）</th><td>@Model.ShohinMeiKana</td></tr>
-				<tr><th>仕入値</th><td>@Model.ShiireKakaku.ToString("N0") 円</td></tr>
-				<tr><th>売値</th><td>@Model.HanbaiKakaku.ToString("N0") 円</td></tr>
+				<tr><th>仕入値</th><td>@Model.Shiirene.ToString("N0") 円</td></tr>
+				<tr><th>売値</th><td>@Model.Urine.ToString("N0") 円</td></tr>
 				<tr><th>仕入先コード</th><td>@Model.ShiiresakiCode</td></tr>
 			</tbody>
 		</table>
@@ -121,8 +121,10 @@ else
 			DeleteErrorMessage = $"削除中にいシステムエラーが発生しました：{ex.Message}";
 		}
 	}
+
+	
 	private void GoBack()
 	{
-		NavManager.NavigateTo("/shohin/delete/select", forceLoad: true);
+		NavManager.NavigateTo("/shohin/index");
 	}
 }

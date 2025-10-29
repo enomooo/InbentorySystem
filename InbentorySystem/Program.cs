@@ -11,7 +11,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 // ShohinRepositoryをDIコンテナへ登録
-builder.Services.AddScoped<ShohinRepository>();
+builder.Services.AddScoped<IShohinRepository, ShohinRepository>();
 
 // アプリケーションインスタンスの構築
 var app = builder.Build();

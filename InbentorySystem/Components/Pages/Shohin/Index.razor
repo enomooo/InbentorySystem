@@ -1,14 +1,23 @@
 ﻿@page "/shohin/index"
 @using InbentorySystem.Data
 @using InbentorySystem.Data.Models
-@inject ShohinRepository ShohinRepo
+@using InbentorySystem.Services
+@inject IShohinRepository ShohinRepo
 @inject NavigationManager NavManager
+@inject IShohinService ShohinService
 @using Microsoft.AspNetCore.Components.Forms
 
 <PageTitle>商品管理メニュー</PageTitle>
 
 <h1>商品管理メニュー</h1>
 
+@* 検索・修正・削除共通のエラーメッセージ表示エリア*@
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+	<div class="alert alert-danger">@ErrorMessage</div>
+}
+
+@* 商品検索エリア*@
 <div class="card p-4 mb-4">
 	<h2>商品検索</h2>
 	<div class="row mb-3">
@@ -23,63 +32,66 @@
 	</div>
 </div>
 <hr class="mt-4" />
+
+@* 新規商品登録エリア*@
 <div class="card p-4">
 	<h2>新規商品登録</h2>
-	<EditForm Model="@NewModel" OnValidSubmit="RegisterAsync">
+	<EditForm Model="@NewModel" OnValidSubmit="NewShohinRegistrationAsync">
 		<DataAnnotationsValidator />
 
 		<div class="card p-4">
 			<div class="row mb-3">
-				<label for="shohinCode" class="col-sm-3 col-form-label">商品コード</label>
+				<label for="ShohinCode" class="col-sm-3 col-form-label">商品コード</label>
 				<div class="col-sm-5">
-					<InputText id="shohinCode" @bind-Value="NewModel.ShohinCode" class="form-control" />
+					<InputText id="ShohinCode" @bind-Value="NewModel.ShohinCode" class="form-control" />
 					<ValidationMessage For="@(() => NewModel.ShohinCode)" />
 				</div>
 			</div>
 
 			<div class="row mb-3">
-				<label for="kanjiName" class="col-sm-3 col-form-label">商品名（漢字）</label>
+				<label for="KanjiName" class="col-sm-3 col-form-label">商品名（漢字）</label>
 				<div class="col-sm-7">
-					<InputText id="kanjiName" @bind-Value="NewModel.ShohinMeiKanji" class="form-control" />
+					<InputText id="KanjiName" @bind-Value="NewModel.ShohinMeiKanji" class="form-control" />
 					<ValidationMessage For="@(() => NewModel.ShohinMeiKanji)" />
 				</div>
 			</div>
 
 			<div class="row mb-3">
-				<label for="kanaName" class="col-sm-3 col-form-label">商品名（かな）</label>
+				<label for="KanaName" class="col-sm-3 col-form-label">商品名（かな）</label>
 				<div class="col-sm-7">
-					<InputText id="kanjiName" @bind-Value="NewModel.ShohinMeiKana" class="form-control" />
+					<InputText id="KanaName" @bind-Value="NewModel.ShohinMeiKana" class="form-control" />
 					<ValidationMessage For="@(() => NewModel.ShohinMeiKana)" />
 				</div>
 			</div>
 
 			<div class="row mb-3">
-				<label for="shiire" class="col-sm-3 col-form-label">仕入値</label>
+				<label for="Shiirene" class="col-sm-3 col-form-label">仕入値</label>
 				<div class="col-sm-3">
-					<InputNumber id="shiire" @bind-Value="NewModel.ShiireKakaku" class="form-control" />
-					<ValidationMessage For="@(() => NewModel.ShiireKakaku)" />
+					<InputNumber id="Shiirene" @bind-Value="NewModel.Shiirene" class="form-control" />
+					<ValidationMessage For="@(() => NewModel.Shiirene)" />
 				</div>
 			</div>
 
 			<div class="row mb-3">
-				<label for="hanbai" class="col-sm-3 col-form-label">売値</label>
+				<label for="Urine" class="col-sm-3 col-form-label">売値</label>
 				<div class="col-sm-3">
-					<InputNumber id="hanbai" @bind-Value="NewModel.HanbaiKakaku" class="form-control" />
-					<ValidationMessage For="@(() => NewModel.HanbaiKakaku)" />
+					<InputNumber id="Urine" @bind-Value="NewModel.Urine" class="form-control" />
+					<ValidationMessage For="@(() => NewModel.Urine)" />
 				</div>
 			</div>
 
 			<div class="row mb-3">
-				<label for="ShiireCode" class="col-sm-3 col-form-label">仕入先コード</label>
+				<label for="ShiiresakiCode" class="col-sm-3 col-form-label">仕入先コード</label>
 				<div class="col-sm-4">
-					<InputText id="shiireCode" @bind-Value="NewModel.ShiiresakiCode" class="form-control" />
+					<InputText id="ShiiresakiCode" @bind-Value="NewModel.ShiiresakiCode" class="form-control" />
 					<ValidationMessage For="@(() => NewModel.ShiiresakiCode)" />
 				</div>
 			</div>
 
 			<div class="card p-4">
 				<div class="d-flex gap-3 mt-4">
-					<button type="submit" class="btn btn-success">登録画面</button>　@* type="submit"でRegisterAsyncが呼ばれる*@
+					@* type="submit"でRegisterAsyncが呼ばれる*@
+					<button type="submit" class="btn btn-success">登録画面</button>
 					<button type="button" class="btn btn-secondary" @onclick="ResetNewForm">フォームリセット</button>
 				</div>
 				@if (!string.IsNullOrEmpty(RegisterErrorMessage))
@@ -90,8 +102,9 @@
 		</div>
 	</EditForm>
 </div>
+<hr class="mt-4" />
 
-
+@* 商品修正エリア*@
 <div class="card p-4 mb-4">
 	<h2>商品修正</h2>
 	<div class="row mb-3">
@@ -105,9 +118,9 @@
 		<button class="btn btn-secondary" @onclick="@(ResetEditForm)">リセット</button>
 	</div>
 </div>
-
 <hr class="mt-4" />
 
+@* 商品削除エリア*@
 <div class="card p-4 mb-4">
 	<h2>商品削除</h2>
 	<div class="row mb-3">
@@ -121,32 +134,41 @@
 		<button class="btn btn-secondary" @onclick="@(ResetDeleteForm)">リセット</button>
 	</div>
 </div>
+<hr class="mt-4" />
 
 
 
 @code {
-	// 画面の状態（ステート）
-	private string SearchKeyword = string.Empty; // 検索専用キーワード
-	private string EditSearchKeyword = string.Empty; // 修正専用キーワード
-	private string DeleteSearchKeyword = string.Empty; // 削除専用キーワード
+	// 各機能ごとのキーワードを保持するフィールド
+	private string SearchKeyword = string.Empty;
+	private string EditSearchKeyword = string.Empty; 
+	private string DeleteSearchKeyword = string.Empty; 
 
+	// エラーメッセージを保持するフィールド
 	private string ErrorMessage = string.Empty;
 	private string RegisterErrorMessage = string.Empty;
 
-	private ShohinModel NewModel = new(); // 新規登録用モデル
-
-	private enum ActionType { Search, Edit, Delete }
+	// 新規登録フォームとバインドされるモデル
+	private ShohinModel NewModel = new();
 
 	/// <summary>
-	///
+	/// SearchAndNavigeateメソッドで実行する処理の種別を定義
 	/// </summary>
-	/// <param name="action"></param>
-	/// <param name="keyword"></param>
+	private enum ActionType 
+	{ 
+		Search,
+		Edit,
+		Delete 
+	}
+
+	/// <summary>
+	/// (検索・修正・削除)の検索を実行し、結果画面へ遷移
+	/// </summary>
+	/// <param name="action">実行するアクション（Search, Edit, Delete）</param>
+	/// <param name="keyword">検索キーワード</param>
 	/// <returns></returns>
-	/// <exception cref="InvalidOperationException"></exception>
 	private async Task SearchAndNavigate(ActionType action, string keyword)
 	{
-		// ErrorMessageは検索/修正/削除共通で表示
 		ErrorMessage = string.Empty;
 		List<ShohinModel> results = new();
 
@@ -164,24 +186,19 @@
 				results = await ShohinRepo.SearchAsync(keyword);
 			}
 
-			// 該当商品がない場合、エラーメッセージを表示して終了
-			if (results == null || !results.Any())
+			var targetUrl = ShohinService.DetermineNavigationUri(keyword, results);
+
+			// 該当商品がない場合、エラーメッセージを表示して終了(return == 0)
+			if (string.IsNullOrEmpty(targetUrl))
 			{
-				ErrorMessage = $"該当する商品がありませんでした。処理を続行できません。";
-				return;
+				ErrorMessage = "該当する商品がありませんでした。";
 			}
 
-			// keywordがnull、空白ならall,それ以外ならURLエンコード
-			string query = string.IsNullOrWhiteSpace(keyword) ? "all" : Uri.EscapeDataString(keyword);
-
-			string targetUrl = action switch
+			// returnが1以上なら各種編集画面に遷移
+			else
 			{
-				ActionType.Search => $"/shohin/list?q={query}",
-				ActionType.Edit => $"/shohin/edit?q={query}",
-				ActionType.Delete => $"/shohin/delete/select?q={query}",
-				_ => throw new InvalidOperationException()
-			};
-			NavManager.NavigateTo(targetUrl);
+				NavManager.NavigateTo(targetUrl);	
+			}
 		}
 		catch (Exception ex)
 		{
@@ -189,17 +206,12 @@
 		}
 	}
 
-	// ------------------
-	// リセット処理
-	// ------------------
-
 	/// <summary>
-	///フォームリセット
+	/// 検索フォームリセット
 	/// </summary>
 	private void ResetForm()
 	{
-		SearchKeyword = string.Empty;
-		ErrorMessage = string.Empty;
+		ComponentUtils.ResetSearchForm(ref SearchKeyword, ref ErrorMessage);
 	}
 
 	/// <summary>
@@ -207,8 +219,7 @@
 	/// </summary>
 	private void ResetEditForm()
 	{
-		EditSearchKeyword = string.Empty;
-		ErrorMessage = string.Empty;
+		ComponentUtils.ResetSearchForm(ref EditSearchKeyword, ref ErrorMessage);
 	}
 
 	/// <summary>
@@ -216,27 +227,29 @@
 	/// </summary>
 	private void ResetDeleteForm()
 	{
-		DeleteSearchKeyword = string.Empty;
-		ErrorMessage = string.Empty;
+		ComponentUtils.ResetSearchForm(ref DeleteSearchKeyword, ref ErrorMessage);
 	}
 
 	/// <summary>
-	/// 登録処理（RegisterAsync）
+	/// 新規商品登録処理
 	/// </summary>
-	/// <returns>重複メッセージ</returns>
-	private async Task RegisterAsync()
+	private async Task NewShohinRegistrationAsync()
 	{
 		RegisterErrorMessage = string.Empty;
 		try
 		{
+			// 重複チェック
 			bool isDuplicate = await ShohinRepo.CheckDuplicateCodeAsync(NewModel.ShohinCode);
-
 			if (isDuplicate)
 			{
 				RegisterErrorMessage = "この商品コードは既に登録されています";
 				return;
 			}
+
+			// 登録実行
 			await ShohinRepo.RegisterAsync(NewModel);
+
+			// 実行後の処理
 			NewModel = new ShohinModel();
 			NavManager.NavigateTo("/shohin/index", forceLoad: true);
 		}

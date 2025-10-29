@@ -11,7 +11,7 @@ namespace InbentorySystem.Data
     /// <summary>
     /// Npgaqlドライバを使用してPostgreSQLへの接続して（CRUD処理）を担当するリポジトリクラス
     /// </summary>
-    public class ShohinRepository
+    public class ShohinRepository : IShohinRepository
     {
         // データベース接続文字列を保持するプライベートなフィールド
         private readonly string _connectionString;
@@ -27,7 +27,6 @@ namespace InbentorySystem.Data
             _connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
         }
-
 
         // -----------------------------------------
         // ①　検索処理　（GetAllAsync / SearchAsync）
@@ -107,8 +106,8 @@ namespace InbentorySystem.Data
                 ShohinCode = reader["shohin_code"].ToString() ?? string.Empty,
                 ShohinMeiKanji = reader["shohin_mei_kanji"].ToString() ?? string.Empty,
                 ShohinMeiKana = reader["shohin_mei_kana"].ToString() ?? string.Empty,
-                ShiireKakaku = reader.GetInt32("shiirene"),
-                HanbaiKakaku = reader.GetInt32("urine"),
+                Shiirene = reader.GetInt32("shiirene"),
+                Urine = reader.GetInt32("urine"),
                 ShiiresakiCode = reader["siiresaki_code"].ToString() ?? string.Empty,
             };
         }
@@ -146,8 +145,11 @@ namespace InbentorySystem.Data
         /// 新しい商品をM_SHOHINとT_ZAIKOに登録する非同期メソッド(トランザクション必須)
         /// </summary>
         /// <param name="shohin">入力したShohinModel</param>
-        public async Task RegisterAsync(ShohinModel shohin)
+        public async Task<int> RegisterAsync(ShohinModel shohin)
         {
+            // 挿入された行数を保持する変数
+            int affectedRows = 0;
+
             var shohinSql = @"
                 INSERT INTO m_shohin
                 (shohin_code, shohin_mei_kanji, shohin_mei_kana, shiirene, urine, siiresaki_code)
@@ -170,12 +172,12 @@ namespace InbentorySystem.Data
                     shohinCmd.Parameters.AddWithValue("Code", shohin.ShohinCode);
                     shohinCmd.Parameters.AddWithValue("Kanji", shohin.ShohinMeiKanji);
                     shohinCmd.Parameters.AddWithValue("Kana", shohin.ShohinMeiKana);
-                    shohinCmd.Parameters.AddWithValue("Shiire", shohin.ShiireKakaku);
-                    shohinCmd.Parameters.AddWithValue("Hanbai", shohin.HanbaiKakaku);
+                    shohinCmd.Parameters.AddWithValue("Shiirene", shohin.Shiirene);
+                    shohinCmd.Parameters.AddWithValue("Urine", shohin.Urine);
                     // ShiiresakiCodeがnullの場合はDBNullに変換して使う
                     shohinCmd.Parameters.AddWithValue("Shiiresaki", (object?)shohin.ShiiresakiCode ?? DBNull.Value);
 
-                    await shohinCmd.ExecuteNonQueryAsync();
+                    affectedRows = await shohinCmd.ExecuteNonQueryAsync();
                 }
 
                 await using (var zaikoCmd = new NpgsqlCommand(zaikoSql, conn, transaction))
@@ -190,6 +192,7 @@ namespace InbentorySystem.Data
                 await transaction.RollbackAsync();
                 throw;
             }
+            return affectedRows;
         }
 
         /// <summary>
@@ -221,8 +224,12 @@ namespace InbentorySystem.Data
         /// 既存の商品データをM_SHOHINとT_ZAIKOに修正する非同期メソッド(トランザクション必須)
         /// </summary>
         /// <param name="shohin">修正するShohinModel</param>
-        public async Task UpdateAsync(ShohinModel shohin)
+        public async Task<int> UpdateAsync(ShohinModel shohin)
         {
+            // 戻り値の行数を保持するための変数
+            int affectedRows = 0;
+
+            // shohinテーブルの更新sql
             var shohinSql = @"
                 UPDATE M_SHOHIN SET
                     shohin_mei_kanji = @Kanji,
@@ -233,6 +240,7 @@ namespace InbentorySystem.Data
                 WHERE
                     shohin_code = @Code;";
 
+            // zaikoテーブルの更新sql
             var zaikoSql = @"
                 UPDATE t_zaiko SET
                     koushin_nichiji = NOW()
@@ -251,24 +259,28 @@ namespace InbentorySystem.Data
                     shohinCmd.Parameters.AddWithValue("Code", shohin.ShohinCode);
                     shohinCmd.Parameters.AddWithValue("Kanji", shohin.ShohinMeiKanji);
                     shohinCmd.Parameters.AddWithValue("Kana", shohin.ShohinMeiKana);
-                    shohinCmd.Parameters.AddWithValue("Shiire", shohin.ShiireKakaku);
-                    shohinCmd.Parameters.AddWithValue("Hanbai", shohin.HanbaiKakaku);
+                    shohinCmd.Parameters.AddWithValue("Shiirene", shohin.Shiirene);
+                    shohinCmd.Parameters.AddWithValue("Urine", shohin.Urine);
                     // ShiiresakiCodeがnullの場合はDBNullに変換して使う
                     shohinCmd.Parameters.AddWithValue("Shiiresaki", (object?)shohin.ShiiresakiCode ?? DBNull.Value);
 
-                    await shohinCmd.ExecuteNonQueryAsync();
+                    // 更新された行数をaffectedRowsに格納
+                    affectedRows = await shohinCmd.ExecuteNonQueryAsync();
                 }
                 await using (var zaikoCmd = new NpgsqlCommand(zaikoSql, conn, transaction))
                 {
                     zaikoCmd.Parameters.AddWithValue("Code", shohin.ShohinCode);
                     await zaikoCmd.ExecuteNonQueryAsync();
                 }
+                await transaction.CommitAsync();
             }
             catch (Exception)
             {
+                // エラー発生時はロールバック
                 await transaction.RollbackAsync();
                 throw;
             }
+            return affectedRows;
         }
 
         // ---------------------------
@@ -313,6 +325,33 @@ namespace InbentorySystem.Data
                 throw;
             }
 
+        }
+
+        /// <summary>
+        /// 仕入先コードが存在するか確認するメソッド
+        /// </summary>
+        /// <param name="shiiresakiCode"></param>
+        /// <returns>ヒットした仕入先コードの数</returns>
+        public async Task<bool> CheckShiiresakiExistsAsync(string shiiresakiCode)
+        {
+            if (string.IsNullOrEmpty(shiiresakiCode))
+            {
+                return false;
+            }
+
+            using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var sql = "SELECT COUNT(*) FROM m_shiiresaki WHERE shiiresaki_code = @ShiiresakiCode";
+
+            using var command = new NpgsqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@ShiiresakiCode", shiiresakiCode);
+
+            // DBからの戻り値はlong型なのでキャストする(DBNullをチェック)
+            object? result = await command.ExecuteScalarAsync();
+            var count = result == DBNull.Value || result == null ? 0L : (long)result;
+
+            return count > 0;
         }
     }
 }
