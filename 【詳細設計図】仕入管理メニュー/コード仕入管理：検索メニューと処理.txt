@@ -1,0 +1,53 @@
+sequenceDiagram
+    participant U as ユーザー(ブラウザ)
+    participant IndexComp as ShiireIndex.razor
+    participant Repo as ShiireRepository
+    participant DB as DB(PostgreSQL)
+
+    title 仕入管理：検索メニューと処理
+
+    %% --------------------
+    %% 画面アクセスと初期表示
+    %% --------------------
+    U->>IndexComp: 画面アクセス（URL: /shiire/index）
+    activate IndexComp
+
+    Note over IndexComp: フォーム初期化 (仕入年月、商品コード)
+
+    IndexComp-->>U: 画面表示
+
+    %% --------------------
+    %% 仕入検索処理
+    %% --------------------
+    U->>IndexComp: 仕入れ年月を入力 (例: 2025/10)
+    U->>IndexComp: 商品コードを入力 (例: P001, または空)
+    U->>IndexComp: 仕入検索ボタン クリック
+
+    Note over IndexComp: 検索条件を検証・整形
+
+    IndexComp->>Repo: 検索実行（SearchAsync）
+    activate Repo
+    
+    Note over Repo: SQL構築: 仕入れ年月 AND 商品コード
+    Repo->>DB: SELECT * FROM T_SHIIRE WHERE ShiireNengappi LIKE '[年月]%' AND ShohinCode = '[コード]'
+    activate DB
+    DB-->>Repo: 該当仕入データ（List<ShiireModel>）
+    deactivate DB
+    Repo-->>IndexComp: 検索結果
+    deactivate Repo
+
+    alt 該当仕入伝票がある場合
+        Note over IndexComp: 検索結果を次画面に渡す準備
+        IndexComp->>U: **仕入一覧画面**へ遷移（URL: /shiire/list?q=...）
+        deactivate IndexComp
+    else 該当仕入伝票がない場合
+        IndexComp->>IndexComp: エラーメッセージを設定
+        IndexComp-->>U: "該当する仕入伝票はありませんでした"と**Index画面に表示**
+    end
+
+    %% --------------------
+    %% リセット処理
+    %% --------------------
+    U->>IndexComp: リセットボタン クリック
+    IndexComp->>IndexComp: フォームの入力値を初期化
+    IndexComp-->>U: 入力フィールドをクリアして表示を更新

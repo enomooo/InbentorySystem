@@ -1,0 +1,55 @@
+classDiagram
+    direction LR
+
+    class ShiireModel {
+        +string ShiireNengappi
+        +string ShohinCode
+        +string ShiiresakiCode
+        +int Quantity
+        +decimal Shiirene
+    }
+    
+    class ZaikoModel {
+        +string ShohinCode
+        +int CurrentQuantity
+    }
+
+    class IShiireRepository {
+        <<interface>>
+        +Task<int> RegisterAsync(ShiireModel)
+        +Task<int> UpdateAsync(ShiireModel)
+        +Task<int> DeleteAsync(string date, string code)
+        +Task<List<ShiireModel>> SearchAsync(string keyword)
+        +Task<ShiireModel> GetByDateAndCodeAsync(string date, string code)
+    }
+
+    class ShiireRepository
+    class ISqlExecutor {
+        <<interface>>
+        +Task<T> QuerySingleAsync<T>(string sql, object param)
+        +Task<List<T>> QueryAsync<T>(string sql, object param)
+        +Task<int> ExecuteAsync(string sql, object param)
+    }
+    
+    class ShiireService {
+        +Task<int> RegisterShiire(ShiireModel)
+        +Task<int> AdjustZaiko(string code, int diff)
+    }
+    
+    class ShiireRegister
+    class ShiireEdit
+    class ShiireIndex
+
+    ShiireRepository ..|> IShiireRepository : implements
+    ShiireRepository --> ISqlExecutor : uses
+    ShiireRepository --> ShiireModel : manages
+    ShiireRepository --> ZaikoModel : manages
+
+    ShiireService --> IShiireRepository : uses
+    
+    ShiireRegister --> ShiireService : uses
+    ShiireEdit --> ShiireService : uses
+    ShiireIndex --> IShiireRepository : uses
+
+    IShiireRepository "1" -- "1..*" ShiireModel : returns
+    IShiireRepository "1" -- "1..*" ZaikoModel : updates

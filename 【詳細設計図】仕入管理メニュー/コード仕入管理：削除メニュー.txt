@@ -1,0 +1,79 @@
+sequenceDiagram
+    participant U as ユーザー(ブラウザ)
+    participant IndexComp as ShiireIndex.razor
+    participant DeleteComp as ShiireDelete.razor
+    participant Repo as ShiireRepository
+    participant DB as DB(PostgreSQL)
+
+    title 仕入管理：削除シーケンス
+
+    %% -------------------------------------
+    %% 削除対象の検索と選択
+    %% -------------------------------------
+    Note over U,IndexComp: UはIndexCompで削除対象の伝票を検索
+
+    U->>IndexComp: 仕入日付を入力
+    U->>IndexComp: 商品コードを入力
+    U->>IndexComp: [削除画面]ボタン クリック
+    activate IndexComp
+
+    Note over IndexComp: 検索条件の検証
+
+    IndexComp->>Repo: 伝票データ取得（GetByDateAndCodeAsync）
+    activate Repo
+    Repo->>DB: SELECT * FROM T_SHIIRE WHERE ShiireDate = '[日付]' AND ShohinCode = '[コード]'
+    activate DB
+    DB-->>Repo: 該当仕入伝票データ（1件、またはエラー）
+    deactivate DB
+    Repo-->>IndexComp: 検索結果
+    deactivate Repo
+
+    alt 該当伝票がある場合 (成功)
+        IndexComp->>U: **削除確認画面**へ遷移（URL: /shiire/delete?date=[日付]&code=[コード]）
+        deactivate IndexComp
+        
+        Note over U,DeleteComp: Uは遷移先で伝票の削除対象データを確認する
+        
+        U->>DeleteComp: 削除確認画面アクセス
+        activate DeleteComp
+        
+        DeleteComp->>Repo: データ取得（GetByDateAndCodeAsync）
+        activate Repo
+        Repo->>DB: SELECT * FROM T_SHIIRE WHERE ShiireDate = '[日付]' AND ShohinCode = '[コード]'
+        activate DB
+        DB-->>Repo: 削除対象伝票データ
+        deactivate DB
+        Repo-->>DeleteComp: 伝票データ
+        deactivate Repo
+        
+        Note over DeleteComp: 伝票の詳細情報を表示
+        DeleteComp-->>U: 削除確認フォーム表示
+        
+    else 該当伝票がない場合 (エラー処理)
+        IndexComp->>IndexComp: エラーメッセージを設定
+        IndexComp-->>U: "該当する仕入伝票が見つかりませんでした"と**Index画面に表示**
+    end
+    
+    %% -------------------------------------
+    %% 削除実行と在庫調整
+    %% -------------------------------------
+    U->>DeleteComp: [伝票を削除]ボタン クリック
+    
+    U->>DeleteComp: 最終確認ダイアログでOK
+
+    DeleteComp->>Repo: 仕入伝票/在庫削除処理（DeleteAsync）
+    activate Repo
+    
+    Note over Repo: トランザクション開始
+    Repo->>DB: DELETE FROM T_SHIIRE WHERE (条件キー)
+    activate DB
+    DB->>DB: UPDATE T_ZAIKO (在庫数の調整: 数量をマイナス)
+    DB-->>Repo: 削除・更新完了
+    deactivate DB
+    
+    Repo-->>DeleteComp: 削除成功
+    deactivate Repo
+
+    Note over DeleteComp: 処理完了後の遷移
+    DeleteComp->>U: **検索画面へリダイレクト** (/shiire/index)
+    deactivate DeleteComp

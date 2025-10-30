@@ -34,7 +34,8 @@ namespace InbentorySystem.Tests.Repositories
             _mockExecutor.Setup(e => e.QueryFirstOrDefaultAsync<long>(
                 It.IsAny<IDbConnection>(),
                 It.IsAny<string>(),
-                It.IsAny<object?>()))
+                It.IsAny<object?>(), // param
+                It.IsAny<IDbTransaction?>())) // transaction も含める
                 .ReturnsAsync(1L);
 
             string testCode = "A001";
@@ -53,7 +54,8 @@ namespace InbentorySystem.Tests.Repositories
             _mockExecutor.Setup(e => e.QueryFirstOrDefaultAsync<long>(
                 It.IsAny<IDbConnection>(),
                 It.IsAny<string>(),
-                It.IsAny<object?>()))
+                It.IsAny<object?>(), // param
+                It.IsAny<IDbTransaction?>())) // transaction も含める
                 .ReturnsAsync(0L);
 
             string testCode = "A999";
@@ -64,38 +66,40 @@ namespace InbentorySystem.Tests.Repositories
             Assert.False(result);
         }
 
-        [Fact] // 仕入先コードが存在する場合のテスト
+        [Fact] // UT-SR-03:仕入先コードが存在する場合のテスト
         public async Task CheckShiiresakiExistsAsync_ShouldReturnTrue_WhenCodeExists()
         {
             // ARRANGE
-            _mockExecutor.Setup(e => e.QueryFirstOrDefauliExistsAsync<long>(
+            _mockExecutor.Setup(e => e.QueryFirstOrDefaultAsync<long>(
                 It.IsAny<IDbConnection>(),
                 It.IsAny<string>(),
-                It.IsAny<object?>()))
+                It.IsAny<object?>(), // param
+                It.IsAny<IDbTransaction?>())) // transaction も含める
                 .ReturnsAsync(1L);
 
             string testCode = "S100";
 
             // ACT
-            var result = await _repository.CheckDuplicateCodeAsync(testCode);
+            var result = await _repository.CheckShiiresakiExistsAsync(testCode);
 
             // ASSERT
             Assert.True(result);
         }
 
-        [Fact] // 仕入先コードが存在しない場合のテスト
+        [Fact] // UT-SR-04:仕入先コードが存在しない場合のテスト
         public async Task CheckShiiresakiExistsAsync_ShouldReturnFalse_WhenCodeDoesNotExists()
         {
             // ARRANGE
-            _mockExecutor.Setup(e => e.QueryFirstOrDefauliExistsAsync<long>(
+            _mockExecutor.Setup(e => e.QueryFirstOrDefaultAsync<long>(
                 It.IsAny<IDbConnection>(),
                 It.IsAny<string>(),
-                It.IsAny<object?>()))
+                It.IsAny<object?>(), // param
+                It.IsAny<IDbTransaction?>())) // transaction も含める
                 .ReturnsAsync(0L);
             string testCode = "S999";
 
             // ACT
-            var result = await _repository.CheckDuplicateCodeAsync(testCode);
+            var result = await _repository.CheckShiiresakiExistsAsync(testCode);
 
             // ASSERT
             Assert.False(result);

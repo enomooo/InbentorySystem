@@ -15,7 +15,7 @@ namespace InbentorySystem.Services
             }
 
             // キーワードなし -> 全一覧へ
-            if (string.IsNullOrEmpty(keyword))
+            if (string.IsNullOrWhiteSpace(keyword))
             {
                 return "/shohin/list";
             }

@@ -1,0 +1,85 @@
+sequenceDiagram
+    participant U as ユーザー(ブラウザ)
+    participant IndexComp as ShiireIndex.razor
+    participant EditComp as ShiireEdit.razor
+    participant Repo as ShiireRepository
+    participant DB as DB(PostgreSQL)
+
+    title 仕入管理：修正（更新）シーケンス
+
+    %% --------------------
+    %% 修正対象の検索とデータロード
+    %% --------------------
+    Note over U,IndexComp: UはまずIndexCompで修正対象の伝票を検索する
+
+    U->>IndexComp: 仕入日付を入力
+    U->>IndexComp: 商品コードを入力
+    U->>IndexComp: [修正画面]ボタン クリック
+    activate IndexComp
+
+    Note over IndexComp: ① 検索条件のチェック (仕入日付、商品コードの入力検証)
+    
+    IndexComp->>Repo: 伝票データ取得（GetByDateAndCodeAsync）
+    activate Repo
+    Repo->>DB: SELECT * FROM T_SHIIRE WHERE ShiireDate = '[日付]' AND ShohinCode = '[コード]'
+    activate DB
+    DB-->>Repo: 該当仕入伝票データ（1件、またはエラー）
+    deactivate DB
+    Repo-->>IndexComp: 検索結果
+    deactivate Repo
+
+    alt 該当伝票がある場合 (成功)
+        Note over IndexComp: 伝票データをセッション等に一時保存
+        IndexComp->>U: **修正編集画面**へ遷移（URL: /shiire/edit?date=[日付]&code=[コード]）
+        deactivate IndexComp
+        
+        Note over U,EditComp: Uは遷移先で伝票の既存データを確認・修正する
+        
+        U->>EditComp: 修正編集画面アクセス (パラメータ付き)
+        activate EditComp
+        
+        Note over EditComp: 画面ロード時にパラメータからデータ取得（ここではサービスを介す前提）
+        EditComp->>Repo: データ取得（GetByDateAndCodeAsync）
+        activate Repo
+        Repo->>DB: SELECT * FROM T_SHIIRE WHERE ShiireDate = '[日付]' AND ShohinCode = '[コード]'
+        activate DB
+        DB-->>Repo: 修正対象伝票データ
+        deactivate DB
+        Repo-->>EditComp: 伝票データ
+        deactivate Repo
+        
+        Note over EditComp: フォームに既存値をロード (仕入日付、商品コードはキーなので固定、数量、仕入先コードなど)
+        EditComp-->>U: 修正フォーム表示
+        
+    else 該当伝票がない場合 (エラー処理)
+        IndexComp->>IndexComp: エラーメッセージを設定
+        IndexComp-->>U: "該当する仕入伝票が見つかりませんでした"と**Index画面に表示**
+        %% IndexCompはアクティブなまま次の操作を待つ
+    end
+
+    %% --------------------
+    %% データ更新処理
+    %% --------------------
+    U->>EditComp: 情報を修正し [更新]ボタン クリック
+    
+    Note over EditComp: ① 入力項目不足チェック (数量など)
+    alt 入力不足がある場合
+        EditComp-->>U: "入力項目が不足しています" アラートを表示
+    else 入力OKの場合
+        Note over EditComp: 数量変更に伴う在庫影響の計算
+        
+        EditComp->>Repo: 仕入伝票/在庫情報更新（UpdateAsync）
+        activate Repo
+        
+        Repo->>DB: UPDATE T_SHIIRE SET ... WHERE (条件キー)
+        activate DB
+        DB->>DB: UPDATE T_ZAIKO (在庫数の調整: 差分を適用)
+        DB-->>Repo: 更新完了
+        deactivate DB
+        Repo-->>EditComp: 更新成功
+        deactivate Repo
+
+        Note over EditComp: 処理完了後の遷移
+        EditComp->>U: **検索画面へリダイレクト** (/shiire/index)
+        deactivate EditComp
+    end

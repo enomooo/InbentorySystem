@@ -1,0 +1,64 @@
+sequenceDiagram
+    participant U as ユーザー(ブラウザ)
+    participant RegisterComp as ShiireRegister.razor
+    participant Repo as ShiireRepository
+    participant ShohinRepo as ShohinRepository
+    participant DB as DB(PostgreSQL)
+
+    title 仕入管理：新規登録
+
+    %% --------------------
+    %% 画面アクセスと初期表示
+    %% --------------------
+    U->>RegisterComp: 画面アクセス（URL: /shiire/register）
+    activate RegisterComp
+    Note over RegisterComp: フォーム初期化 (仕入日付、商品コード、仕入先コード、数量)
+    RegisterComp-->>U: 登録画面表示 (入力フィールドと登録/リセットボタン)
+
+    %% --------------------
+    %% 仕入登録処理
+    %% --------------------
+    U->>RegisterComp: 仕入日付、商品コード、仕入先コード、数量を入力
+    U->>RegisterComp: 登録ボタン クリック
+
+    alt 入力不足がある場合
+        RegisterComp-->>U: "全ての必須項目を入力してください"
+    else 入力okの場合
+        Note over RegisterComp: 入力値の基本検証 (日付形式、数量>0)
+
+        RegisterComp->>ShohinRepo: 商品コード/仕入先コード存在チェック
+        activate ShohinRepo
+        ShohinRepo->>DB: SELECT 1 FROM M_SHOHIN WHERE ShohinCode = '[コード]' AND SakiCode = '[Sakiコード]'
+        activate DB
+        DB-->>ShohinRepo: 結果 (存在True/False)
+        deactivate DB
+        ShohinRepo-->>RegisterComp: 存在チェック結果
+        deactivate ShohinRepo
+
+        alt 商品/仕入先コードが存在しない場合
+            RegisterComp-->>U: "商品コードまたは仕入先コードが不正です"とエラー表示
+        else 存在する場合
+            Note over RegisterComp: トランザクション準備
+
+            RegisterComp->>Repo: 仕入/在庫登録処理（RegisterAsync）
+            activate Repo
+            
+            Repo->>DB: INSERT INTO T_SHIIRE (仕入伝票の登録)
+            activate DB
+            DB->>DB: UPDATE T_ZAIKO (在庫数の更新: 数量 + [入力数量])
+            DB-->>Repo: 登録・更新完了
+            deactivate DB
+            
+            Repo-->>RegisterComp: 登録成功
+            deactivate Repo
+
+            Note over RegisterComp: 成功後の処理
+            RegisterComp->>RegisterComp: 登録フォームをクリア
+            RegisterComp->>U: 登録成功メッセージを表示
+        end
+    end
+    
+    %% --------------------
+    %% リセット処理
+    %% --------------------
+    U->>RegisterComp: リ
