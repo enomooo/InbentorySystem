@@ -48,7 +48,18 @@
 					{
 						<tr @onclick="() => SelectShiire(shiire)"
 							class="@(SelectedShiire == shiire ? "table-primary" : "")">
-						// 途中です	
+						
+							<td>
+								<input type="radio"
+										name="selectedShiire"
+										checked="@(SelectedShiire == shiire)"
+										@onchange="() => SelectShiire(shiire)" />
+							</td>
+							<td>@shiire.ShiireNengappi?.ToString("yyyy-MM-dd")</td>
+							<td>@shiire.ShohinCode</td>
+							<td>@shiire.ShiiresakiCode</td>
+							<td>@shiire.Quantity</td>
+							<td>@shiire.Shiirene.ToString("C0")</td>
 						</tr>
 					}
 				</tbody>
