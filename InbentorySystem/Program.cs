@@ -22,6 +22,10 @@ DefaultTypeMap.MatchNamesWithUnderscores = true;
 
 // データベース接続文字列を読み込む
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("データベース接続文字列'DefaultConnection'が設定ファイルに見つかりません。");
+}
 
 // IDbConnectionFactory の実装を登録
 // NpgsqlConnectionFactory は、IDbConnectionFactory を実装し、
@@ -44,6 +48,13 @@ builder.Services.AddScoped<IShohinRepository, ShohinRepository>();
 
 // ShohinService
 builder.Services.AddScoped<IShohinService, ShohinService>();
+
+// 仕入RepositoryをDIコンテナへ登録
+builder.Services.AddScoped<IShiireRepository, ShiireRepository>();
+
+builder.Services.AddScoped<ISqlExecutor, SqlExecutor>();
+
+builder.Services.AddScoped<IShiireService, ShiireService>();
 
 // ... (続くコード) ...
 

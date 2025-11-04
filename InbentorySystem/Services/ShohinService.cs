@@ -6,6 +6,17 @@ namespace InbentorySystem.Services
 {
     public class ShohinService : IShohinService
     {
+        private List<ShohinModel> _editResults = new();
+        public void SetEditResults(List<ShohinModel> results)
+        {
+            _editResults = results;
+        }
+
+        public List<ShohinModel> GetEditResults()
+        {
+            return _editResults;
+        }
+
         public string DetermineNavigationUri(string keyword, List<ShohinModel> results)
         {
             // reusltsが null || 0 ならエラーメッセージのためstring.Emptyを返す

@@ -183,7 +183,8 @@
 			// キーワード入力時は部分一致検索
 			else
 			{
-				results = await ShohinRepo.SearchAsync(keyword);
+				ShohinService.SetEditResults(results);
+				NavManager.NavigateTo("/shohin/list");
 			}
 
 			var targetUrl = ShohinService.DetermineNavigationUri(keyword, results);

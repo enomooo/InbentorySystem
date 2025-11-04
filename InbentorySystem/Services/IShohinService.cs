@@ -6,6 +6,9 @@ namespace InbentorySystem.Services
 {
     public interface IShohinService
     {
+        void SetEditResults(List<ShohinModel> results);
+        List<ShohinModel> GetEditResults();
+
         /// <summary>
         /// 検索結果の件数に基づき、次に遷移すべきURIを決定する
         /// </summary>
