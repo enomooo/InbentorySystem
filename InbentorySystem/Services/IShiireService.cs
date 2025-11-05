@@ -5,12 +5,22 @@ namespace InbentorySystem.Services
 {
     public interface IShiireService
     {
-        // 検索結果を一時的に保持するプロパティ/メソッド(画面遷移用)
-        void SetShiireList(List<ShiireModel> results);
+        List<ShiireModel> SearchResults { get; }
+        string? LastDateFrom { get; }
+        string? LastCodeKeyword { get; }
 
-        // 検索結果の件数に応じて、遷移先URIを決定するロジック
+        ShiireModel? LastRegisteredShiire { get; }
+        ShiireModel? LastEditedShiire { get; }
+        ShiireModel? LastDeletedShiire { get; }
+
+        string? DetermineNavigationUri(string dateFrom, string codeKeyword, List<ShiireModel> results, string actionType);
+        void SetShiireList(List<ShiireModel> list);
         List<ShiireModel> GetShiireList();
 
-        string? DetermineNavigationUri(string dateKeyword, string codeKeyword, List<ShiireModel> results, string actionType);
+        void SetLastRegisteredShiire(ShiireModel model);
+        void SetLastEditedShiire(ShiireModel model);
+        void SetLastDeletedShiire(ShiireModel model);
+
+        void Clear();
     }
 }

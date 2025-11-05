@@ -40,8 +40,7 @@
 		<button type="button" class="btn btn-primary" @onclick='() => SearchAndNavigate("Search")'>
 			<i class="bi bi-search"></i> 検索
 		</button>
-		@* リセット機能（必要に応じて@codeブロックに追加してください）*@
-		<button type="button" class="btn btn-secondary">リセット</button>
+		<button type="button" class="btn btn-secondary" @onclick="ResetSearchForm">リセット</button>
 	</div>
 </div>
 <hr class="mt-4" />
@@ -57,8 +56,7 @@
 		<div class="row mb-3">
 			<label for="ShiireNengappi" class="col-sm-3 col-form-label">仕入日付</label>
 			<div class="col-sm-5">
-				@* InputDateを使用し、日付型にバインド*@
-				<InputText id="ShiireNengappi" @bind-Value="NewShiireModel.ShiireNengappi" class="form-control" />
+				<InputDate id="ShiireNengappi" @bind-Value="NewShiireModel.ShiireNengappi" class="form-control" />
 				<ValidationMessage For="@(() => NewShiireModel.ShiireNengappi)" />
 			</div>
 		</div>
@@ -124,10 +122,10 @@
 	<h2>仕入修正</h2>
 	<p class="text-muted">検索条件を入力し、「修正画面へ」を押してください。</p>
 	<div class="d-flex gap-2">
-		<button type="button" class="btn btn-warning" onclick="() => SearchAndNavigate(" Edit")>
+		<button type="button" class="btn btn-warning" @onclick='() => SearchAndNavigate("Edit")'>
 			<i class="bi bi-pencil-square"></i> 修正画面へ
 		</button>
-		<button type="button" class="btn btn-secondary">リセット</button>
+		<button type="button" class="btn btn-secondary" @onclick="ResetSearchForm">リセット</button>
 	</div>
 </div>
 <hr class="mt-4" />
@@ -137,10 +135,10 @@
 	<h2>仕入削除</h2>
 	<p class="text-muted">検索条件を入力し、「削除画面へ」を押してください。</p>
 	<div class="d-flex gap-2">
-		<button type="button" class="btn btn-warning" onclick="() => SearchAndNavigate(" Delete")>
+		<button type="button" class="btn btn-warning" @onclick='() => SearchAndNavigate("Delete")'>
 			<i class="bi bi-pencil-square"></i> 削除画面へ
 		</button>
-		<button type="button" class="btn btn-secondary">リセット</button>
+		<button type="button" class="btn btn-secondary" @onclick="ResetSearchForm">リセット</button>
 	</div>
 </div>
 
@@ -219,6 +217,15 @@
 		}
 	}
 
+	private void ResetSearchForm()
+	{
+		DateFrom = null;
+		DateTo = null;
+		CodeKeyword = string.Empty;
+		Message = null;
+		IsError = false;
+	}
+
 	private async Task NewShiireRegistrationAsync()
 	{
 		RegisterErrorMessage = null;
@@ -231,6 +238,7 @@
 			{
 				Message = $"仕入伝票(商品コード: {NewShiireModel.ShohinCode}の登録と在庫調整が完了しました。";
 				IsError = false;
+				NavigationManager.NavigateTo("/shiire/index", forceLoad: true);
 				ResetNewForm();
 			}
 			else

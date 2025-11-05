@@ -56,6 +56,9 @@ builder.Services.AddScoped<ISqlExecutor, SqlExecutor>();
 
 builder.Services.AddScoped<IShiireService, ShiireService>();
 
+builder.Services.AddScoped<IZaikoService, ZaikoService>();
+
+
 // ... (続くコード) ...
 
 // アプリケーションインスタンスの構築

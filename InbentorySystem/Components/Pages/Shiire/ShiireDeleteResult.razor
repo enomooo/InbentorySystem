@@ -1,0 +1,55 @@
+﻿@page "/shiire/delete/result"
+@using InbentorySystem.Data
+@using InbentorySystem.Services
+@using InbentorySystem.Data.Models
+@inject IShiireService ShiireService
+@inject IZaikoService ZaikoService
+@inject NavigationManager NavigationManager
+
+<h1>仕入削除結果</h1>
+
+@if (ShiireService.LastDeletedShiire is null)
+{
+    <div class="alert alert-warning">削除された仕入情報が見つかりません。<a href="/shiire/index">仕入管理メニューに戻る</a></div>
+}
+else
+{
+    var s = ShiireService.LastDeletedShiire;
+    var beforeQuantity = s.Quantity;
+    var afterQuantity = ZaikoService.GetCurrentQuantityAsync(s.ShohinCode);
+
+    <div class="card p-4 shadow-sm mb-4">
+        <h5>以下の仕入を削除しました</h5>
+        <table class="table table-bordered">
+            <tr><th>仕入番号</th><td>@s.ShiireNo</td></tr>
+            <tr><th>仕入日</th><td>@s.ShiireNengappi.ToString("yyyy/MM/dd")</td></tr>
+            <tr><th>商品コード</th><td>@s.ShohinCode</td></tr>
+            <tr><th>仕入先コード</th><td>@s.ShiiresakiCode</td></tr>
+            <tr><th>数量</th><td>@s.Quantity</td></tr>
+        </table>
+    </div>
+
+    <div class="card p-4 shadow-sm mb-4">
+        <h5>以下の在庫を更新しました</h5>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>商品コード</th>
+                    <th>変更前の数量</th>
+                    <th>変更後の数量</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>@s.ShohinCode</td>
+                    <td>@beforeQuantity</td>
+                    <td>@afterQuantity</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <button class="btn btn-secondary mt-3" @onclick='() => NavigationManager.NavigateTo("/shiire/index")'>
+        仕入管理メニューに戻る
+    </button>
+}

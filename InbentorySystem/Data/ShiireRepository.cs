@@ -17,30 +17,23 @@ namespace InbentorySystem.Data
             _executor = executor;
         }
 
-        /// <summary>
-        /// 登録処理
-        /// </summary>
-        /// <param name="shiire">shiireModel</param>
-        /// <returns></returns>
         public async Task<int> RegisterAsync(ShiireModel shiire)
         {
             shiire.Tourokunichiji = DateTime.Now;
-
             const string sql = @"
-                -- 1. T_SHIIRE(仕入伝票)に新規レコードを挿入
-                INSERT INTO T_SHIIRE
-                    (shiiresakinengappi, shohincode, shiiresakicode, quantity, shiirene, tourokunichiji)
-                VALUES
-                    (@ShiireNengappi, @ShohinCode, @ShiiresakiCode, @Quantity, @Shiirene, @TourokuNichiji);
+                -- 1. T_SHIIRE(仕入伝票)に新規レコードを挿入 
+                INSERT INTO T_SHIIRE (shiiresakinengappi, shohincode, shiiresakicode, quantity, shiirene, tourokunichiji) 
+                VALUES (@ShiireNengappi, @ShohinCode, @ShiiresakiCode, @Quantity, @Shiirene, @TourokuNichiji);
 
                 -- 2.T_ZAIKO(在庫)を更新
-                -- UPSERT (レコードが存在すれば更新、なければ挿入）を行う
-                INSERT INTO T_ZAIKO(shohincode, currentquantity, tourokunichiji, kousinnichiji)
-                VALUES (@ShohinCode, @Quantity, @TourokuNichiji, @TourokuNichiji)
-                ON CONFLICT (shohincode)
-                DO UPDATE SET
-                    currentquantity = T_ZAIKO.currentquantity + EXCLUDED.quantity, -- 既存の値に数量を加算
-                    kousinnichiji = EXCLUDED.tourokunichiji; -- 更新日時を最新に
+                -- UPSERT (レコードが存在すれば更新、なければ挿入）を行う 
+                INSERT INTO T_ZAIKO(shohincode, currentquantity, tourokunichiji, kousinnichiji) 
+                VALUES (@ShohinCode, @Quantity, @TourokuNichiji, @TourokuNichiji) 
+                ON CONFLICT (shohincode) 
+                DO UPDATE SET currentquantity = T_ZAIKO.currentquantity + EXCLUDED.quantity,
+                -- 既存の値に数量を加算 
+                kousinnichiji = EXCLUDED.tourokunichiji;
+                -- 更新日時を最新に 
                 ";
 
             try
@@ -57,25 +50,12 @@ namespace InbentorySystem.Data
             }
         }
 
-        /// <summary>
-        /// 検索処理
-        /// </summary>
-        /// <param name="dateFrom">いつから</param>
-        /// <param name="dateTo">いつまで</param>
-        /// <param name="shohinCode">商品コード</param>
-        /// <returns>hitした商品コード</returns>
-        /// <exception cref="ApplicationException"></exception>
         public async Task<List<ShiireModel>> SearchAsync(string dateFrom, string dateTo, string shohinCode)
         {
             // 常に真の条件を設け、WHERE句の動的構築を容易にする
-
-            var sql = @"
-                SELECT
-                    * FROM
-                    T_SHIIRE
-                WHERE 1 = 1 ";
-
+            var sql = @" SELECT * FROM T_SHIIRE WHERE 1 = 1 ";
             var parameters = new DynamicParameters();
+
             if (!string.IsNullOrEmpty(dateFrom))
             {
                 sql += " AND shiiresakinengappi >= @DateFrom";
@@ -91,7 +71,7 @@ namespace InbentorySystem.Data
             if (!string.IsNullOrEmpty(shohinCode))
             {
                 sql += "AND shohincode LIKE @ShohinCode ";
-                parameters.Add("@ShohinCode", $"%{shohinCode}");
+                parameters.Add("@ShohinCode", $"%{shohinCode}%");
             }
             sql += " ORDER BY shiiresakinengappi DESC, shohincode ASC;";
 
@@ -108,29 +88,16 @@ namespace InbentorySystem.Data
                 throw new ApplicationException("仕入伝票の検索中にエラーが発生しました。", ex);
             }
         }
-
-
-        /// <summary>
-        /// 取得処理
-        /// </summary>
-        /// <param name="date">入力された日付</param>
-        /// <param name="code">商品コード</param>
-        /// <returns>仕入伝票の単一取得</returns>
         public async Task<ShiireModel?> GetByDateAndCodeAsync(string date, string code)
         {
             const string sql = @"
-                SELECT *
-                FROM T_SHIRE
-                WHERE
-                shiiresakinengappi = @ShiireNengappi
-                AND shohincode = @ShohinCode;";
+                SELECT * FROM 
+                T_SHIIRE WHERE 
+                shiiresakinengappi = @ShiireNengappi 
+                AND
+                shohincode = @ShohinCode;";
 
-            var parameters = new
-            {
-                ShiireNengappi = date,
-                ShohinCode = code
-            };
-
+            var parameters = new { ShiireNengappi = date, ShohinCode = code };
             try
             {
                 using (var connection = _connectionFactory.CreateConnection())
@@ -138,49 +105,40 @@ namespace InbentorySystem.Data
                     return await _executor.QueryFirstOrDefaultAsync<ShiireModel>(connection, sql, parameters);
                 }
             }
+
             catch (Exception ex)
             {
                 throw new ApplicationException("仕入伝票の単一取得中にエラーが発生しました。", ex);
             }
         }
 
-        /// <summary>
-        /// 修正処理
-        /// </summary>
-        /// <param name="shiire">修正後のshiireModel</param>
-        /// <returns>影響を受けた行数</returns>
+
         public async Task<int> UpdateAsync(ShiireModel shiire)
         {
-            const string getOldQuantitySql = @"
-                SELECT
-                    quantity
-                FROM
-                    T_SHIIRE
-                WHERE
-                    shiiresakinengappi = @ShiireNengappi
-                    AND shohincode = @ShohinCode;";
+            const string getOldQuantitySql = @" 
+            SELECT quantity FROM T_SHIIRE 
+            WHERE shiiresakinengappi = @ShiireNengappi 
+            AND
+            shohincode = @ShohinCode;";
 
             const string updateShiireSql = @"
-                UPDATE
-                    T_SHIIRE
-                SET
-                    shiiresakinengappi = @ShiireNengappi,
-                    shohincode = @ShohinCode,
-                    shiiresaki_code = @ShiiresakiCode,
-                    quantity = @Quantity,
-                    shiirene = @Shiirene
-                WHERE
-                    shiiresakinengappi = @ShiireNengappi
-                    AND shohincode = @ShohinCode;";
+            UPDATE T_SHIIRE SET
+            shiiresakinengappi = @ShiireNengappi,
+            shohincode = @ShohinCode,
+            shiiresaki_code = @ShiiresakiCode, 
+            quantity = @Quantity, 
+            shiirene = @Shiirene 
+            WHERE
+            shiiresakinengappi = @ShiireNengappi 
+            AND 
+            shohincode = @ShohinCode;";
 
             const string updateZaikoSql = @"
-                UPDATE
-                    T_ZAIKO
-                SET
-                    currentquantity = currentquantity + @QuantityDifference,
-                    lousinnichiji = NOW()
-                WHERE
-                    shohincode = @ShohinCode;";
+            UPDATE T_ZAIKO SET 
+            currentquantity = currentquantity + @QuantityDifference,
+            kousinnichiji = NOW() 
+            WHERE
+            shohincode = @ShohinCode;";
 
             using (var connection = _connectionFactory.CreateConnection())
             {
@@ -194,9 +152,7 @@ namespace InbentorySystem.Data
                         {
                             throw new InvalidOperationException("修正対象が見つかりません。");
                         }
-
                         var quantityDifference = shiire.Quantity - oldQuantity;
-
                         await connection.ExecuteAsync(updateShiireSql, shiire, transaction: transaction);
 
                         var zaikoParam = new
@@ -204,6 +160,7 @@ namespace InbentorySystem.Data
                             shiire.ShohinCode,
                             quantityDifference = quantityDifference
                         };
+
                         await connection.ExecuteAsync(updateZaikoSql, zaikoParam, transaction: transaction);
 
                         transaction.Commit();
@@ -218,31 +175,23 @@ namespace InbentorySystem.Data
                 }
             }
         }
-
-        /// <summary>
-        /// 既存の仕入伝票を削除し、在庫数を払戻すメソッド（トランザクション）
-        /// </summary>
-        /// <param name="date">仕入年月日</param>
-        /// <param name="code">商品コード</param>
-        /// <param name="quantity">仕入数量</param>
-        /// <returns>影響を受けた行数</returns>
         public async Task<int> DeleteAsync(string date, string code, int quantity)
         {
             const string updateZaikoSql = @"
-                UPDATE
-                    T_ZAIKO
-                SET
-                    currentquantity = currentquantity - @Quantity, -- 数量分を減算（払い戻し）
-                    kousinnichiji = NOW()
+                UPDATE T_ZAIKO SET
+                currentquantity = currentquantity - @Quantity, 
+                -- 数量分を減算（払い戻し） 
+                kousinnichiji = NOW() 
                 WHERE
-                    shohincode = @ShohinCode;";
+                shohincode = @ShohinCode;";
 
             const string deleteShiireSql = @"
                 DELETE FROM
-                    T_SHIIRE
+                T_SHIIRE 
                 WHERE
-                    shiiresakinengappi = @ShiireNengappi
-                    AND shohincode = @ShohinCode;";
+                shiiresakinengappi = @ShiireNengappi 
+                AND
+                shohincode = @ShohinCode;";
 
             var parameters = new
             {
@@ -253,15 +202,15 @@ namespace InbentorySystem.Data
 
             using (var connection = _connectionFactory.CreateConnection())
             {
-                connection.Open();
-                using (var transaction = connection.BeginTransaction())
+                connection.Open(); using (var transaction = connection.BeginTransaction())
                 {
                     try
                     {
                         await connection.ExecuteAsync(updateZaikoSql, parameters, transaction: transaction);
-                        int affectedRows = await connection.ExecuteAsync(deleteShiireSql, parameters, transaction: transaction);
-
+                        int affectedRows = await
+                            connection.ExecuteAsync(deleteShiireSql, parameters, transaction: transaction);
                         transaction.Commit();
+
                         return affectedRows;
                     }
                     catch (Exception ex)
@@ -274,3 +223,4 @@ namespace InbentorySystem.Data
         }
     }
 }
+
