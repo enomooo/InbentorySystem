@@ -33,5 +33,11 @@ namespace InbentorySystem.Data
         {
             return await connection.QueryFirstOrDefaultAsync<T>(sql, param, transaction);
         }
+
+        public async Task<T?> QuerySingleOrDefaultAsync<T>(string sql, object? param = null, IDbTransaction? transaction = null)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<T>(sql, param, transaction);
+        }
     }
 }

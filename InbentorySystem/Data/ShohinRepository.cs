@@ -54,7 +54,7 @@ namespace InbentorySystem.Data
         /// </summary>
         /// <param name="keyword">入力されたキーワード</param>
         /// <returns>ヒットしたList<ShohinModel></returns>
-        public async Task<List<ShohinModel>> SearchAsync(string keyword)
+        public async Task<List<ShohinModel>> SearchByKeywordAsync(string keyword)
         {
             var sql = @"
                 SELECT
@@ -96,8 +96,9 @@ namespace InbentorySystem.Data
 
         /// <summary>
         /// 新しい商品をM_SHOHINとT_ZAIKOに登録する非同期メソッド(トランザクション必須)
+        /// トランザクションを用いて、両テーブルへの登録処理を一貫して保証する。
         /// </summary>
-        /// <param name="shohin">入力したShohinModel</param>
+        /// <param name="shohin">登録対象ShohinModel</param>
         public async Task<int> RegisterAsync(ShohinModel shohin)
         {
             var shohinSql = @"
@@ -117,9 +118,9 @@ namespace InbentorySystem.Data
                 {
                     try
                     {
-                        int affectedRows = await connection.ExecuteAsync(shohinSql, shohin, transaction: transaction);
+                        int affectedRows = await _sqlExecutor.ExecuteAsync(shohinSql, shohin, transaction: transaction);
 
-                        await connection.ExecuteAsync(zaikoSql, new {shohin.ShohinCode}, transaction:transaction);
+                        await _sqlExecutor.ExecuteAsync(zaikoSql, new {shohin.ShohinCode}, transaction:transaction);
 
                         transaction.Commit();
                         return affectedRows;
@@ -132,8 +133,6 @@ namespace InbentorySystem.Data
                 }
             }
         }
-
-
 
         /// <summary>
         /// 商品コードの重複をチェックする非同期メソッド
@@ -201,10 +200,10 @@ namespace InbentorySystem.Data
                         };
 
                         // DapperのExecuteAsyncにトランザクションを渡す
-                        int affectedRows = await connection.ExecuteAsync(shohinSql, shohinParam, transaction: transaction);
+                        int affectedRows = await _sqlExecutor.ExecuteAsync(shohinSql, shohinParam, transaction: transaction);
 
                         var zaikoParam = new { shohin.ShohinCode };
-                        await connection.ExecuteAsync(zaikoSql, zaikoParam, transaction: transaction);
+                        await _sqlExecutor.ExecuteAsync(zaikoSql, zaikoParam, transaction: transaction);
 
                         transaction.Commit();
                         return affectedRows;
@@ -237,6 +236,8 @@ namespace InbentorySystem.Data
             // M_SHOHINへのDELETE文
             var shohinSql = "DELETE FROM m_shohin WHERE shohin_code = @Code;";
 
+            var param = new {Code = shohinCode};
+
             using (var connection = _factory.CreateConnection())
             {
                 connection.Open();
@@ -244,9 +245,8 @@ namespace InbentorySystem.Data
                 {
                     try
                     {
-                        var param = new { Code = shohinCode };
-                        await connection.ExecuteAsync(zaikoSql, param, transaction: transaction);
-                        await connection.ExecuteAsync(shohinSql, param, transaction: transaction);
+                        await _sqlExecutor.ExecuteAsync(zaikoSql, param, transaction: transaction);
+                        await _sqlExecutor.ExecuteAsync(shohinSql, param, transaction: transaction);
                         transaction.Commit();
                     }
                     catch (Exception)

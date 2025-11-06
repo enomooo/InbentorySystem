@@ -1,0 +1,56 @@
+﻿@page "/shohin/edit/select"
+@using InbentorySystem.Data
+@using InbentorySystem.Services
+@using InbentorySystem.Data.Models
+@inject IShohinService ShohinService
+@inject NavigationManager NavManager
+
+<h1>商品修正選択</h1>
+
+@if (ShohinService.GetShohinList().Count == 0)
+{
+	<div class="alert alert-warning">
+		検索結果がありません。<a href="/shohin/index">商品管理メニューに戻る</a>
+	</div>
+}
+else
+{
+	<table class="table table-striped table-bordered">
+		<thead class="thead-dark">
+			<tr>
+				<th>商品コード</th>
+				<th>商品名（漢字）</th>
+				<th>商品名（かな）</th>
+				<th class="text-end">仕入値</th>
+				<th class="text-end">売値</th>
+				<th>仕入先コード</th>
+				<th></th>
+			</tr>
+		</thead>
+
+		<tbody>
+			@foreach (var shohin in ShohinService.GetShohinList())
+			{
+				<tr>
+					<td>@shohin.ShohinCode</td>
+					<td>@shohin.ShohinMeiKanji</td>
+					<td>@shohin.ShohinMeiKana</td>
+					<td class="text-end">@shohin.Shiirene.ToString("N0")</td>
+					<td class="text-end">@shohin.Urine.ToString("N0")</td>
+					<td>@shohin.ShiiresakiCode</td>
+					<td>
+						<button class="btn btn-sm btn-primary" @onclick="() => Edit(shohin)">修正</button>
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}
+
+@code{
+	private void Edit(ShohinModel model)
+	{
+		ShohinService.SetLastEditedShohin(model);
+		NavManager.NavigateTo("/shohin/edit/form");
+	}
+}

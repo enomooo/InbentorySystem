@@ -97,7 +97,7 @@ else
 			else
 			{
 				var keyword = Uri.UnescapeDataString(q);
-				ShohinList = await ShohinRepo.SearchAsync(keyword);
+				ShohinList = await ShohinRepo.SearchByKeywordAsync(keyword);
 			}
 		}
 		catch (Exception ex)

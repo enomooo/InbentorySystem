@@ -27,7 +27,7 @@
 		</div>
 	</div>
 	<div class="d-flex gap-2">
-		<button class="btn btn-info" @onclick="@(() => SearchAndNavigate(ActionType.Search, SearchKeyword))">検索</button>
+		<button class="btn btn-info" @onclick="@(() => SearchAndNavigate(SearchKeyword))">検索</button>
 		<button class="btn btn-secondary" @onclick="@(ResetForm)">リセット</button>
 	</div>
 </div>
@@ -114,7 +114,7 @@
 		</div>
 	</div>
 	<div class="d-flex gap-2">
-		<button class="btn btn-warning" @onclick="@(() => SearchAndNavigate(ActionType.Edit, EditSearchKeyword))">修正画面へ</button>
+		<button class="btn btn-warning" @onclick="@(() => SearchForEdit(EditSearchKeyword))">修正画面へ</button>
 		<button class="btn btn-secondary" @onclick="@(ResetEditForm)">リセット</button>
 	</div>
 </div>
@@ -130,7 +130,7 @@
 		</div>
 	</div>
 	<div class="d-flex gap-2">
-		<button class="btn btn-danger" @onclick="@(() => SearchAndNavigate(ActionType.Delete, DeleteSearchKeyword))">削除画面へ</button>
+		<button class="btn btn-danger" @onclick="@(() => SearchForDelete(DeleteSearchKeyword))">削除画面へ</button>
 		<button class="btn btn-secondary" @onclick="@(ResetDeleteForm)">リセット</button>
 	</div>
 </div>
@@ -162,12 +162,11 @@
 	}
 
 	/// <summary>
-	/// (検索・修正・削除)の検索を実行し、結果画面へ遷移
+	/// 商品名キーワードに基づいて検索を実行し、検索結果に応じて画面遷移を行う
 	/// </summary>
-	/// <param name="action">実行するアクション（Search, Edit, Delete）</param>
 	/// <param name="keyword">検索キーワード</param>
 	/// <returns></returns>
-	private async Task SearchAndNavigate(ActionType action, string keyword)
+	private async Task SearchAndNavigate(string keyword)
 	{
 		ErrorMessage = string.Empty;
 		List<ShohinModel> results = new();
@@ -183,11 +182,10 @@
 			// キーワード入力時は部分一致検索
 			else
 			{
-				ShohinService.SetEditResults(results);
-				NavManager.NavigateTo("/shohin/list");
+				results = await ShohinRepo.SearchByKeywordAsync(keyword);
 			}
 
-			var targetUrl = ShohinService.DetermineNavigationUri(keyword, results);
+			var targetUrl = ShohinService.GetNavigationUri(keyword);
 
 			// 該当商品がない場合、エラーメッセージを表示して終了(return == 0)
 			if (string.IsNullOrEmpty(targetUrl))
@@ -195,7 +193,7 @@
 				ErrorMessage = "該当する商品がありませんでした。";
 			}
 
-			// returnが1以上なら各種編集画面に遷移
+			// returnが1以上なら検索画面に遷移
 			else
 			{
 				NavManager.NavigateTo(targetUrl);	
@@ -269,4 +267,43 @@
 		RegisterErrorMessage = string.Empty;
 		StateHasChanged();
 	}
+
+	private async Task SearchForEdit(string keyword)
+	{
+		ErrorMessage = string.Empty;
+		var results = string.IsNullOrWhiteSpace(keyword)
+			? await ShohinRepo.GetAllAsync()
+			: await ShohinRepo.SearchByKeywordAsync(keyword);
+
+		ShohinService.SetSearchResults(results);
+
+		if (results.Count == 0)
+		{
+			ErrorMessage = "該当する商品がありませんでした。";
+		}
+		else
+		{
+			NavManager.NavigateTo("/shohin/edit/select");
+		}
+	}
+
+	private async Task SearchForDelete(string keyword)
+	{
+		ErrorMessage = string.Empty;
+		var results = string.IsNullOrWhiteSpace(keyword)
+			? await ShohinRepo.GetAllAsync()
+			: await ShohinRepo.SearchByKeywordAsync(keyword);
+
+		ShohinService.SetSearchResults(results);
+
+		if (results.Count == 0)
+		{
+			ErrorMessage = "該当する商品がありませんでした。";
+		}
+		else
+		{
+			NavManager.NavigateTo("/shohin/delete/select");
+		}
+	}
+
 }

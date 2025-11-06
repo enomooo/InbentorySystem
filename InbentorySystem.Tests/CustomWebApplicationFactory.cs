@@ -16,7 +16,10 @@ namespace InbentorySystem.Tests
             builder.ConfigureAppConfiguration((context, conf) =>
             {
                 var assembly = typeof(TProgram).Assembly;
-                var basePath = Path.GetDirectoryName(assembly.Location);
+                var location = assembly.Location;
+                var basePath = string.IsNullOrWhiteSpace(location)
+                    ? Directory.GetCurrentDirectory()
+                    : Path.GetDirectoryName(assembly.Location)!;
 
                 var config = new ConfigurationBuilder()
                 .SetBasePath(basePath)
@@ -42,6 +45,8 @@ namespace InbentorySystem.Tests
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var testConnectionString = configuration.GetConnectionString("DefaultConnection");
 
+                if (string.IsNullOrWhiteSpace(testConnectionString))
+                    throw new InvalidOperationException("接続文字列 'DefaultConnection' が設定されていません");
                 services.AddSingleton<IDbConnectionFactory>(
                     sp => new NpgsqlConnectionFactory(testConnectionString));
             });

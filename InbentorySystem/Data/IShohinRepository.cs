@@ -10,7 +10,7 @@ namespace InbentorySystem.Data
         // 検索系メソッド
         Task<List<ShohinModel>> GetAllAsync();
         Task<ShohinModel?> GetByCodeAsync(string code);
-        Task<List<ShohinModel>> SearchAsync(string keyword);
+        Task<List<ShohinModel>> SearchByKeywordAsync(string keyword);
 
         // 登録・更新系メソッド
         Task<int> RegisterAsync(ShohinModel shohinModel);
