@@ -1,0 +1,87 @@
+sequenceDiagram
+    participant U as ユーザー(ブラウザ)
+    participant IndexComp as ShohinIndex.razor
+    participant SelectComp as ShohinEditSelect.razor
+    participant Repo as ShohinRepository
+    participant DB as DB(PostgreSQL)
+    
+    title 商品管理：修正（更新）シーケンス
+
+    %% --------------------
+    %% 修正対象の検索と選択
+    %% --------------------
+    Note over U,IndexComp: UはまずIndexCompで修正対象を検索する
+
+    U->>IndexComp: 商品名テキストボックスに入力
+    U->>IndexComp: [修正]ボタン クリック (または検索ボタン)
+    activate IndexComp
+
+    Note over IndexComp: ① 検索キーワードのチェック (エラー処理は検索機能に準ずる)
+    
+    IndexComp->>Repo: 検索実行（SearchAsync）
+    activate Repo
+    Repo->>DB: SELECT * FROM M_SHOHIN WHERE ShohinMeiKanji LIKE '%[入力値]%'
+    activate DB
+    DB-->>Repo: 該当商品データ
+    deactivate DB
+    Repo-->>IndexComp: 検索結果
+    deactivate Repo
+
+    alt 該当商品がある場合 (成功)
+        Note over IndexComp: 検索結果をセッション等に一時保存
+        IndexComp->>U: **修正選択画面**へ遷移（URL: /shohin/edit/select?q=...）
+        deactivate IndexComp
+        
+        Note over U,SelectComp: Uは遷移先で商品コード、商品名等の一覧から修正対象を選択する
+        
+        U->>SelectComp: 一覧から商品を選択（クリック）
+        activate SelectComp
+        
+        Note over SelectComp: 選択された商品のコードをパラメータに付加
+        SelectComp->>U: **商品管理画面**へリダイレクト（URL: /shohin/index?code=[コード]）
+        deactivate SelectComp
+
+    else 該当商品がない場合 (エラー処理)
+        IndexComp->>IndexComp: エラーメッセージを設定 (検索機能と同じ処理)
+        IndexComp-->>U: "該当する商品はありませんでした"と**Index画面に表示**
+        %% IndexCompはアクティブなまま次の操作を待つ
+    end
+
+    %% --------------------
+    %% データロードと更新処理
+    %% --------------------
+    U->>IndexComp: 商品管理画面アクセス (パラメータ付き)
+    activate IndexComp
+    
+    IndexComp->>Repo: 対象商品データ取得（GetByCodeAsync）
+    activate Repo
+    Repo->>DB: SELECT * FROM M_SHOHIN WHERE ShohinCode = '[コード]'
+    activate DB
+    DB-->>Repo: 商品データ
+    deactivate DB
+    Repo-->>IndexComp: データ
+    deactivate Repo
+    
+    Note over IndexComp: フォームを修正モードに設定し、既存値をロード (商品コード、商品名、他)
+
+    IndexComp-->>U: 修正フォーム表示
+    
+    U->>IndexComp: 商品情報を修正し [更新]ボタン クリック
+    
+    Note over IndexComp: ① 入力項目不足チェック
+    alt 入力不足がある場合
+        IndexComp-->>U: "入力項目が不足しています" アラートを表示
+    else 入力OKの場合
+        IndexComp->>Repo: 商品情報更新（UpdateAsync）
+        activate Repo
+        Repo->>DB: UPDATE M_SHOHIN SET ... WHERE ShohinCode = '[コード]'
+        activate DB
+        DB-->>Repo: 更新完了
+        deactivate DB
+        Repo-->>IndexComp: 更新成功
+        deactivate Repo
+
+        Note over IndexComp: フォームを新規登録モードに戻し、クリア
+        IndexComp->>U: **検索画面へリダイレクト** (/shohin/index)
+        deactivate IndexComp
+    end

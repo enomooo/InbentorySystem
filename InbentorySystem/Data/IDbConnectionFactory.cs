@@ -3,7 +3,7 @@
 namespace InbentorySystem.Data
 {
     /// <summary>
-    /// データベース接続を作成する責務を持つインターフェー
+    /// データベース接続を作成する責務を持つインターフェイス
     /// </summary>
     public interface IDbConnectionFactory
     {

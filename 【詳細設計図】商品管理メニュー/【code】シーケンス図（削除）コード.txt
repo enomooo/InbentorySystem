@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant U as ユーザー(ブラウザ)
+    participant IndexComp as ShohinIndex.razor
+    participant Repo as ShohinRepository
+    participant DB as DB(PostgreSQL)
+    
+    title 商品管理：削除シーケンス
+
+    %% -------------------------------------
+    %% 削除対象の選択とフォームへのロード
+    %% -------------------------------------
+    U->>IndexComp: 商品名を入力
+    U->>IndexComp: 削除画面ボタン クリック
+
+    IndexComp->>Repo: 検索実行(SearchAsync)
+    activate  Repo
+    Repo->>DB: SELECT * FROM M_SHOHIN WHERE ShohinMeiKanji LIKE '%[入力値]%'
+    activate DB
+    DB-->>Repo: 該当商品データ
+    deactivate DB
+    Repo-->>IndexComp: 検索結果
+    deactivate Repo
+
+    alt 該当商品がある場合
+        IndexComp-->>U: **画面下部の一覧を更新**（該当商品のみ表示）
+    else 該当商品がない場合
+        IndexComp-->>U: "該当する商品はありませんでした"と一覧エリアに表示
+    end

@@ -3,7 +3,7 @@
 namespace InbentorySystem.Services
 {
     public interface IZaikoService
-    { 
+    {
         /// <summary>
         /// 指定された商品コードの在庫数を加算、減算する
         /// </summary>

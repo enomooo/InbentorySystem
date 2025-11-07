@@ -7,9 +7,6 @@ using Microsoft.Extensions.Configuration;
 using Npgsql;
 using System.Data;
 
-
-
-
 // Webアプリケーションを構築するためのホストビルダーを作成
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,29 +30,22 @@ if (string.IsNullOrEmpty(connectionString))
 builder.Services.AddSingleton<IDbConnectionFactory>(
     sp => new NpgsqlConnectionFactory(connectionString));
 
-// ISqlExecutor の実装を登録
-// 例: SqlExecutor クラス
-builder.Services.AddScoped<ISqlExecutor, SqlExecutor>();
-
 // ShohinRepositoryをDIコンテナへ登録
 builder.Services.AddScoped<IShohinRepository, ShohinRepository>();
 
-// Program.cs の DI 登録セクション
-
-// ... (以前の登録) ...
-// ShohinRepositoryをDIコンテナへ登録
-builder.Services.AddScoped<IShohinRepository, ShohinRepository>();
-
-// ShohinService
+// ShohinServiceをDIコンテナへ登録
 builder.Services.AddScoped<IShohinService, ShohinService>();
 
 // 仕入RepositoryをDIコンテナへ登録
 builder.Services.AddScoped<IShiireRepository, ShiireRepository>();
 
+// ISqlExecutor の実装を登録
 builder.Services.AddScoped<ISqlExecutor, SqlExecutor>();
 
+// 仕入ServiceをDIコンテナへ登録
 builder.Services.AddScoped<IShiireService, ShiireService>();
 
+// 在庫ServiceをDIコンテナへ登録
 builder.Services.AddScoped<IZaikoService, ZaikoService>();
 
 

@@ -93,9 +93,8 @@ else
 
 @code {
 	[Parameter]
+	// URLから渡される商品データ（修正対象の識別子）
 	public string ShohinCode { get; set; } = string.Empty;
-	private List<ShohinModel> ShohinList { get; set; } = new();
-
 	private ShohinModel? Model { get; set; }
 	private bool IsLoading = true;
 	private string ErrorMessage = string.Empty;
@@ -173,7 +172,4 @@ else
 	{
 		NavigationManager.NavigateTo("/shohin/edit/select", forceLoad: true);
 	}
-
-
-
 }

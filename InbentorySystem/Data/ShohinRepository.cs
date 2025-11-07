@@ -14,21 +14,23 @@ namespace InbentorySystem.Data
     /// </summary>
     public class ShohinRepository : IShohinRepository
     {
-        // DB接続を生成するfactoryと,SQL実行するExecutorをDIで受け取る
+        // DB接続を生成するfactoryと,SQL実行するExecutorをDIで受け取る(Dapperのラップ)
         private readonly IDbConnectionFactory _factory;
         private readonly ISqlExecutor _sqlExecutor;
 
+        /// <summary>
+        /// ShohinRepository のインスタンスを生成するためのコンストラクタ
+        /// </summary>
+        /// <param name="factory">DB接続を生成する責務を持つファクトリ</param>
+        /// <param name="sqlExecutor">SQL文の実行と結果のマッピングを担う抽象化された実行ユーティリティ</param>
         public ShohinRepository(IDbConnectionFactory factory, ISqlExecutor sqlExecutor)
         {
             // フィールドの初期化
             _factory = factory;
             _sqlExecutor = sqlExecutor;
-
         }
 
-        // -----------------------------------------
-        // ①　検索処理　（GetAllAsync / SearchAsync）
-        // -----------------------------------------
+        // 検索処理
 
         /// <summary>
         /// 全ての商品データを取得する非同期メソッド
@@ -90,9 +92,7 @@ namespace InbentorySystem.Data
             }
         }
 
-        // ---------------------------
-        // ②　登録処理（RegisterAsync）
-        // ---------------------------
+        //　登録処理
 
         /// <summary>
         /// 新しい商品をM_SHOHINとT_ZAIKOに登録する非同期メソッド(トランザクション必須)
@@ -120,7 +120,7 @@ namespace InbentorySystem.Data
                     {
                         int affectedRows = await _sqlExecutor.ExecuteAsync(shohinSql, shohin, transaction: transaction);
 
-                        await _sqlExecutor.ExecuteAsync(zaikoSql, new {shohin.ShohinCode}, transaction:transaction);
+                        await _sqlExecutor.ExecuteAsync(zaikoSql, new { shohin.ShohinCode }, transaction: transaction);
 
                         transaction.Commit();
                         return affectedRows;
@@ -153,12 +153,10 @@ namespace InbentorySystem.Data
             }
         }
 
-        // ---------------------------
-        // ③ 修正処理（UpdateAsync）
-        // ---------------------------
+        // 修正処理
 
         /// <summary>
-        /// 既存の商品データをM_SHOHINとT_ZAIKOに修正する非同期メソッド(トランザクション必須)
+        /// 既存の商品データをM_SHOHINとT_ZAIKOに修正する非同期メソッド(トランザクション)
         /// </summary>
         /// <param name="shohin">修正するShohinModel</param>
         public async Task<int> UpdateAsync(ShohinModel shohin)
@@ -181,10 +179,12 @@ namespace InbentorySystem.Data
                 WHERE
                     shohin_code = @ShohinCode;";
 
+            // DBとの接続生成
             using (var connection = _factory.CreateConnection())
             {
                 connection.Open();
 
+                // トランザクションの一連の操作を明示
                 using (var transaction = connection.BeginTransaction())
                 {
                     try
@@ -205,24 +205,22 @@ namespace InbentorySystem.Data
                         var zaikoParam = new { shohin.ShohinCode };
                         await _sqlExecutor.ExecuteAsync(zaikoSql, zaikoParam, transaction: transaction);
 
+                        // 成功時は更新件数を返す
                         transaction.Commit();
                         return affectedRows;
                     }
+
+                    // 失敗ならrollback
                     catch (Exception)
                     {
                         transaction.Rollback();
                         throw;
                     }
                 }
-
             }
         }
 
-
-
-        // ---------------------------
-        // ④ 削除処理（DeleteAsync）
-        // ---------------------------
+        // 削除処理
 
         /// <summary>
         /// M_SHOHINとT_ZAIKOから指定された商品コードの商品データを削除する非同期メソッド(トランザクション必須)
@@ -236,7 +234,7 @@ namespace InbentorySystem.Data
             // M_SHOHINへのDELETE文
             var shohinSql = "DELETE FROM m_shohin WHERE shohin_code = @Code;";
 
-            var param = new {Code = shohinCode};
+            var param = new { Code = shohinCode };
 
             using (var connection = _factory.CreateConnection())
             {
@@ -277,7 +275,6 @@ namespace InbentorySystem.Data
                 var param = new { ShiiresakiCode = shiiresakiCode };
 
                 var count = await _sqlExecutor.QueryFirstOrDefaultAsync<long>(connection, sql, param);
-
 
                 return count > 0;
             }

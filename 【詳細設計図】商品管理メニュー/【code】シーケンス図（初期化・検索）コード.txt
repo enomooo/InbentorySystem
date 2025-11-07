@@ -1,0 +1,43 @@
+sequenceDiagram
+        participant U as ユーザー(ブラウザ)
+        participant IndexComp as ShohinIndex.razor
+        participant EditComp as ShohinEdit.razor
+        participant Repo as ShohinRepository
+        participant DB as DB(PostgreSQL)
+
+        title 商品管理：検索・登録・修正・削除
+
+
+        %% --------------------
+        %% 画面アクセスと初期表示       
+        %% --------------------
+        U->>IndexComp: 画面アクセス（URL: /shohin/index）
+        activate IndexComp
+
+        Note over IndexComp: フォーム初期化
+
+        IndexComp-->>U: 画面表示
+
+        %% --------------------
+        %% 商品検索処理  
+        %% --------------------
+        U->>IndexComp: 商品名テキストボックスに入力
+        U->>IndexComp: 商品検索ボタン　クリック
+
+        IndexComp->>Repo: 検索実行（SearchAsync）
+        activate Repo
+        Repo->>DB:SELECT * FROM M_SHOHIN WHERE ShohinMeiKanji LIKE '%[入力値]%'
+        activate DB
+        DB-->>Repo: 該当商品データ（List<ShohinModel>）
+        deactivate DB
+        Repo-->>IndexComp: 検索結果
+        deactivate Repo
+
+        alt 該当商品がある場合
+            Note over IndexComp: 検索結果をセッション等に一時保存
+            IndexComp->>U: **一覧表示画面**へ遷移（URL: /shohin/list?q=...）
+            deactivate IndexComp
+        else 該当商品がない場合
+            IndexComp->>IndexComp: エラーメッセージを設定
+            IndexComp-->>U: "該当する商品はありませんでした"と**Index画面に表示**
+        end

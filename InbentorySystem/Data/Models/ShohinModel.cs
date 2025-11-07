@@ -12,7 +12,7 @@ namespace InbentorySystem.Data.Models
     public class ShohinModel
     {
         // 商品コード
-        [Required(ErrorMessage ="商品コードは必須です。")]
+        [Required(ErrorMessage = "商品コードは必須です。")]
         [StringLength(4, ErrorMessage = "商品コードは4文字以内です")]
         [DisplayName("商品コード")]
         public string ShohinCode { get; set; } = string.Empty;
@@ -33,7 +33,7 @@ namespace InbentorySystem.Data.Models
         [Required(ErrorMessage = "仕入値は必須です。")]
         [Range(0, 99999999, ErrorMessage = "価格は0円から99,999,999円の範囲で入力してください。")]
         [DisplayName("仕入値")]
-        public  int Shiirene { get; set; }
+        public int Shiirene { get; set; }
 
         // 売値
         [Required(ErrorMessage = "売値は必須です。")]
@@ -48,7 +48,7 @@ namespace InbentorySystem.Data.Models
         public string ShiiresakiCode { get; set; } = string.Empty;
 
         // Hack: DBのテーブルの定義と、ShohinModelクラスのフィールド定義を照合し、必要に応じてフィールドを追加・修正してください。
-        [Range(-999,999, ErrorMessage = "在庫数は-999個から999個の範囲で入力または計算される")]
+        [Range(-999, 999, ErrorMessage = "在庫数は-999個から999個の範囲で入力または計算される")]
         public int Suuryo { get; set; } = 0;
     }
 }

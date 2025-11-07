@@ -141,8 +141,8 @@
 @code {
 	// 各機能ごとのキーワードを保持するフィールド
 	private string SearchKeyword = string.Empty;
-	private string EditSearchKeyword = string.Empty; 
-	private string DeleteSearchKeyword = string.Empty; 
+	private string EditSearchKeyword = string.Empty;
+	private string DeleteSearchKeyword = string.Empty;
 
 	// エラーメッセージを保持するフィールド
 	private string ErrorMessage = string.Empty;
@@ -154,11 +154,11 @@
 	/// <summary>
 	/// SearchAndNavigeateメソッドで実行する処理の種別を定義
 	/// </summary>
-	private enum ActionType 
-	{ 
+	private enum ActionType
+	{
 		Search,
 		Edit,
-		Delete 
+		Delete
 	}
 
 	/// <summary>
@@ -196,7 +196,7 @@
 			// returnが1以上なら検索画面に遷移
 			else
 			{
-				NavManager.NavigateTo(targetUrl);	
+				NavManager.NavigateTo(targetUrl);
 			}
 		}
 		catch (Exception ex)
@@ -268,6 +268,11 @@
 		StateHasChanged();
 	}
 
+	/// <summary>
+	/// 修正欄の商品を検索して結果があれば修正選択画面へ遷移
+	/// </summary>
+	/// <param name="keyword">修正欄のキーワード</param>
+	/// <returns>修正url</returns>
 	private async Task SearchForEdit(string keyword)
 	{
 		ErrorMessage = string.Empty;
@@ -287,6 +292,11 @@
 		}
 	}
 
+	/// <summary>
+	/// 削除欄の商品を検索して結果があれば削除選択画面へ遷移
+	/// </summary>
+	/// <param name="keyword">削除欄のキーワード</param>
+	/// <returns>削除url</returns>
 	private async Task SearchForDelete(string keyword)
 	{
 		ErrorMessage = string.Empty;

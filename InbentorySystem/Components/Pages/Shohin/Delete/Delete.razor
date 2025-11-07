@@ -16,7 +16,7 @@
 {
 	<p><em>データを読み込み中です...</em></p>
 }
-else if(!string.IsNullOrEmpty(ErrorMessage))
+else if (!string.IsNullOrEmpty(ErrorMessage))
 {
 	<div class="alert alert-danger">@ErrorMessage</div>
 }
@@ -54,22 +54,29 @@ else
 	</div>
 }
 
-@code{
-	// URLから商品コードを受け取る
+@code {
 	[Parameter]
+	]
+	// URLから渡される商品データ（修正対象の識別子）
 	public string ShohinCode { get; set; } = string.Empty;
 	private List<ShohinModel> ShohinList { get; set; } = new();
-
-	private ShohinModel? Model{ get; set; }
+	private ShohinModel? Model { get; set; }
 	private bool IsLoading = true;
 	private string ErrorMessage = string.Empty;
 	private string DeleteErrorMessage = string.Empty;
 
+	/// <summary>
+	/// ページ初期化時に商品情報を取得
+	/// </summary>
 	protected override async Task OnInitializedAsync()
 	{
 		await LoadDataAsync();
 	}
 
+	/// <summary>
+	/// 対象商品を取得
+	/// </summary>
+	/// <returns></returns>
 	private async Task LoadDataAsync()
 	{
 		IsLoading = true;
@@ -103,6 +110,9 @@ else
 
 	}
 
+	/// <summary>
+	/// 商品削除を実行ｓて成功すれば商品管理メニューへ遷移
+	/// </summary>
 	private async Task DeleteConfirmedAsync()
 	{
 		if (Model == null) return;
@@ -122,7 +132,9 @@ else
 		}
 	}
 
-	
+	/// <summary>
+	/// 商品管理メニューに戻る
+	/// </summary>
 	private void GoBack()
 	{
 		NavManager.NavigateTo("/shohin/index");

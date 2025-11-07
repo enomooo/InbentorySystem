@@ -60,22 +60,29 @@ else
 	</table>
 }
 
-@code{
+@code {
 	[Parameter]
 	[SupplyParameterFromQuery]
 
-	// 親ページから渡される検索キーワード
+	// 検索キーワード
 	public string q { get; set; } = string.Empty;
-
 	private List<ShohinModel> ShohinList { get; set; } = new();
 	private bool IsLoading = true;
 	private string ErrorMessage = string.Empty;
 
+	/// <summary>
+	/// ページ読み込み時に検索条件に応じた商品データ取得
+	/// </summary>
+	/// <returns></returns>
 	protected override async Task OnInitializedAsync()
 	{
 		await LoadDataAsync();
 	}
 
+	/// <summary>
+	/// 検索条件に応じてデータを取得
+	/// </summary>
+	/// <returns></returns>
 	private async Task LoadDataAsync()
 	{
 		IsLoading = true;

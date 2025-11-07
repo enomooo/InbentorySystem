@@ -27,7 +27,13 @@ namespace InbentorySystem.Services
         /// <param name="results">検索結果</param>
         public void SetSearchResults(List<ShohinModel> results);
 
+        /// <summary>
+        /// 修正対象の商品を取得する
+        /// </summary>
+        /// <returns>修正対象</returns>
         public ShohinModel? GetLastEditedShohin();
+
+
     }
 }
 

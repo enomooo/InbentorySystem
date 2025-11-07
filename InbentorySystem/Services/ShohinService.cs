@@ -6,9 +6,13 @@ using InbentorySystem.Data.Models;
 
 namespace InbentorySystem.Services
 {
-
+    /// <summary>
+    /// 商品検索・修正・削除などの一時的な状態を保持するクラス
+    /// UIとリポジトリ層の橋渡しを行うサービスクラス
+    /// </summary>
     public class ShohinService : IShohinService
     {
+        // 各種検索結果の一時保存
         private List<ShohinModel> _searchResults = new();
         private ShohinModel? _lastEditedShohin;
         private ShohinModel? _lastDeletedShohin;
@@ -32,6 +36,10 @@ namespace InbentorySystem.Services
             _searchResults = results;
         }
 
+        /// <summary>
+        /// 検索結果を取得
+        /// </summary>
+        /// <returns>検索結果</returns>
         public List<ShohinModel> GetSearchResults()
         {
             return _searchResults;
@@ -45,8 +53,12 @@ namespace InbentorySystem.Services
         {
             _lastEditedShohin = model;
         }
-        public ShohinModel? LastEditedShohin => _lastEditedShohin;
 
+        public ShohinModel? LastEditedShohin => _lastEditedShohin;
+        /// <summary>
+        /// 修正対象の商品を取得する
+        /// </summary>
+        /// <returns>修正対象</returns>
         public ShohinModel? GetLastEditedShohin()
         {
             return _lastEditedShohin;
@@ -72,7 +84,22 @@ namespace InbentorySystem.Services
         {
             _lastDeletedShohin = model;
         }
+
         public ShohinModel? LastDeletedShohin => _lastDeletedShohin;
+        
+        /// <summary>
+        /// 削除対象の商品データをrepository経由で削除するメソッド
+        /// </summary>
+        /// <param name="repository">削除対象の商品データのリポジトリ</param>
+        /// <returns>削除処理</returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public async Task DeleteShohinAsync(IShohinRepository repository)
+        {
+            if (LastDeletedShohin == null)
+                throw new InvalidOperationException("削除対象の商品が設定されていません");
+
+            await repository.DeleteAsync(LastDeletedShohin.ShohinCode);
+        }
 
         /// <summary>
         /// 状態とキーワードに基づく遷移先を動的に生成

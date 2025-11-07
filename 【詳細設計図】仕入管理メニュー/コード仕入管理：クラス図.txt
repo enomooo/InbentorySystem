@@ -1,6 +1,7 @@
 classDiagram
     direction LR
 
+    %% モデル定義
     class ShiireModel {
         +string ShiireNengappi
         +string ShohinCode
@@ -8,48 +9,65 @@ classDiagram
         +int Quantity
         +decimal Shiirene
     }
-    
+
     class ZaikoModel {
         +string ShohinCode
         +int CurrentQuantity
     }
 
+    %% リポジトリインターフェース
     class IShiireRepository {
         <<interface>>
-        +Task<int> RegisterAsync(ShiireModel)
-        +Task<int> UpdateAsync(ShiireModel)
-        +Task<int> DeleteAsync(string date, string code)
-        +Task<List<ShiireModel>> SearchAsync(string keyword)
-        +Task<ShiireModel> GetByDateAndCodeAsync(string date, string code)
+        +Task~int~ RegisterAsync(ShiireModel)
+        +Task~int~ UpdateAsync(ShiireModel)
+        +Task~int~ DeleteAsync(string date, string code)
+        +Task~List~ShiireModel~~ SearchAsync(string keyword)
+        +Task~ShiireModel~ GetByDateAndCodeAsync(string date, string code)
     }
 
     class ShiireRepository
     class ISqlExecutor {
         <<interface>>
-        +Task<T> QuerySingleAsync<T>(string sql, object param)
-        +Task<List<T>> QueryAsync<T>(string sql, object param)
-        +Task<int> ExecuteAsync(string sql, object param)
+        +Task~T~ QuerySingleAsync~T~(string sql, object param)
+        +Task~List~T~~ QueryAsync~T~(string sql, object param)
+        +Task~int~ ExecuteAsync(string sql, object param)
     }
-    
+
+    %% 在庫操作サービス
+    class IZaikoService {
+        <<interface>>
+        +Task AdjustQuantityAsync(string code, int diff)
+        +Task~int~ GetCurrentQuantityAsync(string code)
+    }
+
+    class ZaikoService
+
+    %% 仕入操作サービス
     class ShiireService {
-        +Task<int> RegisterShiire(ShiireModel)
-        +Task<int> AdjustZaiko(string code, int diff)
+        +Task~int~ RegisterShiireAsync(ShiireModel)
+        +Task~int~ UpdateShiireAsync(ShiireModel)
+        +Task~int~ DeleteShiireAsync(string date, string code)
+        +Task~List~ShiireModel~~ SearchShiireAsync(string keyword)
     }
-    
+
+    %% UI層
     class ShiireRegister
     class ShiireEdit
     class ShiireIndex
 
-    ShiireRepository ..|> IShiireRepository : implements
-    ShiireRepository --> ISqlExecutor : uses
-    ShiireRepository --> ShiireModel : manages
-    ShiireRepository --> ZaikoModel : manages
+    %% 実装関係
+    ShiireRepository ..|> IShiireRepository
+    ZaikoService ..|> IZaikoService
 
+    %% 使用関係
+    ShiireRepository --> ISqlExecutor : uses
     ShiireService --> IShiireRepository : uses
-    
+    ShiireService --> IZaikoService : uses
+
     ShiireRegister --> ShiireService : uses
     ShiireEdit --> ShiireService : uses
-    ShiireIndex --> IShiireRepository : uses
+    ShiireIndex --> ShiireService : uses
 
+    %% モデルとの関係（戻り値や引数）
     IShiireRepository "1" -- "1..*" ShiireModel : returns
-    IShiireRepository "1" -- "1..*" ZaikoModel : updates
+    IZaikoService "1" -- "1" ZaikoModel : adjusts

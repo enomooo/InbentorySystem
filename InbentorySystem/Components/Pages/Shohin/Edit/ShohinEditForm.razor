@@ -16,9 +16,9 @@
 }
 else
 {
-	<EditForm Model="@EditModel" OnVaildSubmit = "UpdateShohinAsync">
+	<EditForm Model="@EditModel" OnVaildSubmit="UpdateShohinAsync">
 		<DataAnnotationsValidator />
-		<validationSummary/>
+		<validationSummary />
 
 		<div class="card p-4">
 			<div class="row mb-3">
@@ -31,7 +31,7 @@ else
 			<div class="row mb-3">
 				<label for="KanjiName" class="col-sm-3 col-form-label">商品名（漢字）</label>
 				<div class="col-sm-7">
-					<InputText id="KanjiName" @bind-Value="EditModel.ShohinMeiKanji"/>
+					<InputText id="KanjiName" @bind-Value="EditModel.ShohinMeiKanji" />
 					<ValidationMessage For="@(() => EditModel.ShohinMeiKanji)" />
 				</div>
 			</div>
@@ -39,7 +39,7 @@ else
 			<div class="row mb-3">
 				<label for="KanaName" class="col-sm-3 col-form-label">商品名（かな）</label>
 				<div class="col-sm-7">
-					<InputText id="KanaName" @bind-Value="EditModel.ShohinMeiKana"/>
+					<InputText id="KanaName" @bind-Value="EditModel.ShohinMeiKana" />
 					<ValidationMessage For="@(() => EditModel.ShohinMeiKana)" />
 				</div>
 			</div>
@@ -47,7 +47,7 @@ else
 			<div class="row mb-3">
 				<label for="Shiirene" class="col-sm-3 col-form-label">仕入値</label>
 				<div class="col-sm-3">
-					<InputNumber id="Shiirene" @bind-Value="EditModel.Shiirene"/>
+					<InputNumber id="Shiirene" @bind-Value="EditModel.Shiirene" />
 					<ValidationMessage For="@(() => EditModel.Shiirene)" />
 				</div>
 			</div>
@@ -77,19 +77,27 @@ else
 			{
 				<div class="alert alert-danger mt-3">@ErrorMessage</div>
 			}
-			</div>
+		</div>
 	</EditForm>
 }
 
-@code{
+@code {
+	// 修正対象の商品データ
 	private ShohinModel? EditModel;
 	private string ErrorMessage = string.Empty;
 
+	/// <summary>
+	/// 選択された商品情報を取得
+	/// </summary>
 	protected override void OnInitialized()
 	{
 		EditModel = ShohinService.GetLastEditedShohin();
 	}
 
+	/// <summary>
+	/// 商品情報を更新する
+	/// </summary>
+	/// <returns></returns>
 	private async Task UpdateShohinAsync()
 	{
 		ErrorMessage = string.Empty;
@@ -112,6 +120,7 @@ else
 		}
 	}
 
+	// 商品管理メニューに戻る
 	private void Cancel()
 	{
 		NavManager.NavigateTo("/shohin/index");

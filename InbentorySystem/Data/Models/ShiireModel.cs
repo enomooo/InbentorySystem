@@ -3,7 +3,7 @@
     // T_SHIIREテーブルに対応
     public class ShiireModel
     {
-        public DateTime ShiireNengappi { get; set; } 
+        public DateTime ShiireNengappi { get; set; }
         public string ShohinCode { get; set; } = string.Empty;
 
         public string ShiiresakiCode { get; set; } = string.Empty;

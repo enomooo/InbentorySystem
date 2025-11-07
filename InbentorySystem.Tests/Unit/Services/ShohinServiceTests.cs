@@ -6,6 +6,7 @@ using System.Security.Cryptography.X509Certificates;
 using Moq;
 using InbentorySystem.Data;
 using System.ComponentModel;
+using System.Net.WebSockets;
 
 namespace InbentorySystem.Tests.Unit.Services
 {
@@ -35,7 +36,7 @@ namespace InbentorySystem.Tests.Unit.Services
         {
             // ARRANGE
             string keyword = "存在しない";
-            var results = new List<ShohinModel>();
+            List<ShohinModel> results = new List<ShohinModel>();
             string expectedUri = string.Empty;
 
             // ACT
@@ -101,19 +102,19 @@ namespace InbentorySystem.Tests.Unit.Services
         [Fact] // UT-SH-07: 商品一覧の保持と取得
         public void GetShohinList_ShouldReturnStoredList()
         {
-            var list = new List<ShohinModel>
-            {
+            List<ShohinModel> shohinModels = new()             {
                 new ShohinModel { ShohinCode = "A001" },
                 new ShohinModel { ShohinCode = "A002" }
             };
+            var list = shohinModels;
 
             // 内部フィールドに直接アクセスできないため、Setは省略（初期状態の確認）
             var result = _service.GetShohinList();
             Assert.NotNull(result);
         }
 
-        [Fact]
-        public async Task 修正対象が未設定の場合は例外が発生すること()
+        [Fact]// UT-SH-08: 修正対象が未設定の場合は例外が発生すること
+        public async Task ThrowsException_WhenLastEditedShohinIsNotSet()
         {
             // Arrange
             var mockRepo = new Mock<IShohinRepository>();
@@ -126,8 +127,8 @@ namespace InbentorySystem.Tests.Unit.Services
             });
         }
 
-        [Fact]
-        public async Task UpdateShohinAsyncがリポジトリに正しく移譲されること()
+        [Fact]// UT-SH-09: UpdateShohinAsyncがリポジトリに正しく移譲される
+        public async Task DelegatesUpdateToRepository_WhenLastEditedShohinIsSet()
         {
             // Arrange
             var mockRepo = new Mock<IShohinRepository>();
@@ -158,8 +159,22 @@ namespace InbentorySystem.Tests.Unit.Services
                 m.ShiiresakiCode == "S003"
                 )), Times.Once);
         }
-        [Fact]
-        public async Task 削除対象が設定されていれば削除処理が呼び出されること()
+
+        [Fact] // UT-SH-10: 削除対象が未設定の場合は例外が発生すること
+        public async Task ThrowException_WhenLastDeletedShohinIsNotSet()
+        {
+            // 削除対象が未設定
+            var mockRepo = new Mock<IShohinRepository>();
+            var service = new ShohinService();
+
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await service.DeleteShohinAsync(mockRepo.Object);
+            });
+        }
+
+        [Fact]// UT-SH-11: DeleteShohinAsyncがリポジトリに正しく移譲される
+        public async Task DelegatesDeleteToRepository_WhenLastEditedShohinIsSet()
         {
             // Arrange
             var mockRepo = new Mock<IShohinRepository>();
@@ -175,16 +190,13 @@ namespace InbentorySystem.Tests.Unit.Services
                 ShiiresakiCode = "S010"
             };
 
-            service.SetLastDeletedshohin(model);
+            service.SetLastEditedShohin(model);
 
             // Act
-            await service.DeletedShohinAsync(mockRepo.Object);
+            await service.DeleteShohinAsync(mockRepo.Object);
 
             // Assert
-            mockRepo.Verify(r => r.DeleteAsync(It.Is<ShohinModel>(m =>
-             m.ShohinCode == "A010" &&
-        m.ShohinMeiKanji == "柳刃包丁"
-    )), Times.Once);
+            mockRepo.Verify(r => r.DeleteAsync("A010"), Times.Once);
         }
     }
 }

@@ -148,7 +148,7 @@ namespace InbentorySystem.Data
                     try
                     {
                         var oldQuantity = await _executor.QueryFirstOrDefaultAsync<int>(connection, getOldQuantitySql, shiire, transaction);
-                        if (oldQuantity == default(int))
+                        if (oldQuantity == default)
                         {
                             throw new InvalidOperationException("修正対象が見つかりません。");
                         }

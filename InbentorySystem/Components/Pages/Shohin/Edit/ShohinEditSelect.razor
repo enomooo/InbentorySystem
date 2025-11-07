@@ -47,7 +47,11 @@ else
 	</table>
 }
 
-@code{
+@code {
+	/// <summary>
+	/// 選択された商品にデータを保存する
+	/// </summary>
+	/// <param name="model"></param>
 	private void Edit(ShohinModel model)
 	{
 		ShohinService.SetLastEditedShohin(model);
