@@ -33,7 +33,6 @@ namespace InbentorySystem.Services
         /// <returns>修正対象</returns>
         public ShohinModel? GetLastEditedShohin();
 
-
     }
 }
 

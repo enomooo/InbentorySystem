@@ -48,6 +48,10 @@ else
 }
 
 @code {
+	[Parameter]
+	[SupplyParameterFromQuery]
+	public string q { get; set; } = string.Empty;
+
 	/// <summary>
 	/// 選択された商品にデータを保存する
 	/// </summary>

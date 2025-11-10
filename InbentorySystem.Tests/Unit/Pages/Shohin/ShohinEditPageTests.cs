@@ -1,9 +1,11 @@
 ﻿using Bunit;
 using InbentorySystem.Components.Pages.Shohin;
 using InbentorySystem.Components.Pages.Shohin.Edit;
+using InbentorySystem.Data;
 using InbentorySystem.Data.Models;
 using InbentorySystem.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using System.Net.WebSockets;
 using System.Reflection.Metadata;
 using Xunit;
@@ -41,16 +43,28 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin
         public void ShohinEdit_ShouldAllowEditingShohinMeiKanji()
         {
             using var ctx = new TestContext();
-            var service = new ShohinService();
-            service.SetLastEditedShohin(new ShohinModel { ShohinMeiKanji = "牛刀" });
 
-            ctx.Services.AddSingleton(service);
-            var cut = ctx.RenderComponent<ShohinEditSelect>();
+            var mockRepo = new Mock<IShohinRepository>();
+            mockRepo.Setup(r => r.GetByCodeAsync("A001"))
+                .ReturnsAsync(new ShohinModel
+                {
+                    ShohinCode = "A001",
+                    ShohinMeiKanji = "牛刀",
+                    ShohinMeiKana = "ぎゅうとう",
+                    Shiirene = 1500,
+                    Urine = 3000,
+                    ShiiresakiCode = "S001"
+                });
+
+            ctx.Services.AddSingleton(mockRepo.Object);
+            var cut = ctx.RenderComponent<ShohinEditForm>(parameters => parameters.Add(p => p.ShohinCode, "A001"));
 
             var input = cut.Find("input[id=shohinMeiKanji]");
             input.Change("柳刃包丁");
 
-            Assert.Equal("柳刃包丁", service.LastEditedShohin.ShohinMeiKanji);
+            var updatedValue = cut.Instance.Shohin.ShohinMeiKanji;
+
+            Assert.Equal("柳刃包丁", updatedValue);
         }
 
         [Fact] // UT-SE-03: 商品名が未入力の場合はバリデーションエラー

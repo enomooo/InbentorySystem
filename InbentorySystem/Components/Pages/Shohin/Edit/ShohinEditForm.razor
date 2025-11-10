@@ -82,9 +82,13 @@ else
 }
 
 @code {
+
 	// 修正対象の商品データ
 	private ShohinModel? EditModel;
 	private string ErrorMessage = string.Empty;
+	public string ShohinCode { get; set; } = string.Empty;
+	public ShohinModel Shohin { get; set; } = new();
+
 
 	/// <summary>
 	/// 選択された商品情報を取得
@@ -112,7 +116,7 @@ else
 		{
 			ShohinService.SetLastEditedShohin(EditModel);
 			await ShohinRepo.UpdateAsync(EditModel);
-			NavManager.NavigateTo("/shohin/index", forceLoad: true);
+			NavManager.NavigateTo("/shohin/menu", forceLoad: true);
 		}
 		catch (Exception ex)
 		{
@@ -123,7 +127,7 @@ else
 	// 商品管理メニューに戻る
 	private void Cancel()
 	{
-		NavManager.NavigateTo("/shohin/index");
+		NavManager.NavigateTo("/shohin/menu");
 	}
 
 }

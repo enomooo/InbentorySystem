@@ -56,7 +56,6 @@ else
 
 @code {
 	[Parameter]
-	]
 	// URLから渡される商品データ（修正対象の識別子）
 	public string ShohinCode { get; set; } = string.Empty;
 	private List<ShohinModel> ShohinList { get; set; } = new();
@@ -124,7 +123,7 @@ else
 			await ShohinRepo.DeleteAsync(Model.ShohinCode);
 
 			// 削除成功後、商品管理メニューに戻る
-			NavManager.NavigateTo("/shohin/index", forceLoad: true);
+			NavManager.NavigateTo("/shohin/menu", forceLoad: true);
 		}
 		catch (Exception ex)
 		{

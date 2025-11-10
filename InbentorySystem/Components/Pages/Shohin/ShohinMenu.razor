@@ -1,4 +1,4 @@
-﻿@page "/shohin/index"
+﻿@page "/shohin/menu"
 @using InbentorySystem.Data
 @using InbentorySystem.Data.Models
 @using InbentorySystem.Services
@@ -250,7 +250,7 @@
 
 			// 実行後の処理
 			NewModel = new ShohinModel();
-			NavManager.NavigateTo("/shohin/index", forceLoad: true);
+			NavManager.NavigateTo("/shohin/menu", forceLoad: true);
 		}
 		catch (Exception ex)
 		{

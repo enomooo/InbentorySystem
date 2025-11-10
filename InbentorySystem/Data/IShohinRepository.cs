@@ -16,6 +16,7 @@ namespace InbentorySystem.Data
         Task<int> RegisterAsync(ShohinModel shohinModel);
         Task<int> UpdateAsync(ShohinModel shohinModel);
 
+
         // 削除系メソッド
         Task DeleteAsync(string code);
 
