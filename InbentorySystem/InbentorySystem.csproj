@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="Components\Pages\Shiire\ShiireSearch.razor" />
+    <None Include="Ui\ShohinKanriUi\Shiire\ShiireSearch.razor" />
   </ItemGroup>
 
   <ItemGroup>

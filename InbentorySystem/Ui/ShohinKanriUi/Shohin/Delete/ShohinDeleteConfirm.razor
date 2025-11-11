@@ -1,0 +1,142 @@
+﻿@page "/shohin/delete/{ShohinCode}"
+@using InbentorySystem.Data
+@using InbentorySystem.Data.Models
+@using InbentorySystem.Infrastructure.Interfaces
+@inject IShohinRepository ShohinRepo
+@inject NavigationManager NavManager
+
+<PageTitle>商品削除確認: @ShohinCode</PageTitle>
+
+<h1>商品削除確認</h1>
+
+<button class="btn btn-secondary mb-3" @onclick="GoBack">
+	<span class="oi oi-arrow-left"></span>選択画面へ戻る
+</button>
+
+@if (IsLoading)
+{
+	<p><em>データを読み込み中です...</em></p>
+}
+else if (!string.IsNullOrEmpty(ErrorMessage))
+{
+	<div class="alert alert-danger">@ErrorMessage</div>
+}
+else if (Model == null)
+{
+	<div class="alert alert-warning">指定された商品コード(@ShohinCode)は見つかりませんでした</div>
+}
+else
+{
+	<div class="alert alert-danger">
+		<strong>警告:</strong>以下の商品をデータベースから完全に削除します。この操作は元に戻せません。よろしいですか？
+	</div>
+
+	<div class="card p-4 mb-4">
+		<h2>削除対象の商品情報</h2>
+		<table class="table table-bordered">
+			<tbody>
+				<tr><th>商品コード</th><td>@Model.ShohinCode</td></tr>
+				<tr><th>商品名（漢字）</th><td>@Model.ShohinMeiKanji</td></tr>
+				<tr><th>商品名（かな）</th><td>@Model.ShohinMeiKana</td></tr>
+				<tr><th>仕入値</th><td>@Model.Shiirene.ToString("N0") 円</td></tr>
+				<tr><th>売値</th><td>@Model.Urine.ToString("N0") 円</td></tr>
+				<tr><th>仕入先コード</th><td>@Model.ShiiresakiCode</td></tr>
+			</tbody>
+		</table>
+
+		<button class="btn btn-danger btn-lg mt-3" @onclick="DeleteConfirmedAsync">
+			<span class="oi oi-trash"></span> 削除を実行する
+		</button>
+
+		@if (!string.IsNullOrEmpty(DeleteErrorMessage))
+		{
+			<div class="alert alert-danger mt-3">@DeleteErrorMessage</div>
+		}
+	</div>
+}
+
+@code {
+	[Parameter]
+	// URLから渡される商品データ（修正対象の識別子）
+	public string ShohinCode { get; set; } = string.Empty;
+	private List<ShohinModel> ShohinList { get; set; } = new();
+	private ShohinModel? Model { get; set; }
+	private bool IsLoading = true;
+	private string ErrorMessage = string.Empty;
+	private string DeleteErrorMessage = string.Empty;
+
+	/// <summary>
+	/// ページ初期化時に商品情報を取得
+	/// </summary>
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadDataAsync();
+	}
+
+	/// <summary>
+	/// 対象商品を取得
+	/// </summary>
+	/// <returns></returns>
+	private async Task LoadDataAsync()
+	{
+		IsLoading = true;
+		ErrorMessage = string.Empty;
+
+		if (string.IsNullOrEmpty(ShohinCode))
+		{
+			ErrorMessage = "商品コードが指定されていません。";
+			IsLoading = false;
+			return;
+		}
+
+		try
+		{
+			// GetByCodeAsyncを使ってデータを取得
+			Model = await ShohinRepo.GetByCodeAsync(ShohinCode);
+
+			if (Model == null)
+			{
+				ErrorMessage = $"商品コード'{ShohinCode}'のデータが見つかりませんでした。";
+			}
+		}
+		catch (Exception ex)
+		{
+			ErrorMessage = $"データの読み込み中にエラーが発生しました: {ex.Message}";
+		}
+		finally
+		{
+			IsLoading = false;
+		}
+
+	}
+
+	/// <summary>
+	/// 商品削除を実行ｓて成功すれば商品管理メニューへ遷移
+	/// </summary>
+	private async Task DeleteConfirmedAsync()
+	{
+		if (Model == null) return;
+
+		DeleteErrorMessage = string.Empty;
+		try
+		{
+			// ShohinRepositoryのDeleteAsyncを呼び出してDBからデータを削除
+			await ShohinRepo.DeleteAsync(Model.ShohinCode);
+
+			// 削除成功後、商品管理メニューに戻る
+			NavManager.NavigateTo("/shohin/menu", forceLoad: true);
+		}
+		catch (Exception ex)
+		{
+			DeleteErrorMessage = $"削除中にシステムエラーが発生しました：{ex.Message}";
+		}
+	}
+
+	/// <summary>
+	/// 商品管理メニューに戻る
+	/// </summary>
+	private void GoBack()
+	{
+		NavManager.NavigateTo("/shohin/index");
+	}
+}

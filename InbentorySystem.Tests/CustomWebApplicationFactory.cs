@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using InbentorySystem.Data;
 using System.Net.WebSockets;
+using InbentorySystem.Infrastructure.Interfaces;
 
 namespace InbentorySystem.Tests
 {

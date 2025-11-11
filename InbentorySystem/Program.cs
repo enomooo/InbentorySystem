@@ -1,20 +1,13 @@
 using Dapper;
-using InbentorySystem.Components;
-// ShohinRepositoryの名前空間
 using InbentorySystem.Data;
+using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Services;
-using Microsoft.Extensions.Configuration;
-using Npgsql;
-using System.Data;
+using InbentorySystem.Services.Interfaces;
+using InbentorySystem.Ui;
 
 // Webアプリケーションを構築するためのホストビルダーを作成
 var builder = WebApplication.CreateBuilder(args);
-
-// BlazorコンポーネントのサービスをDIコンテナに登録（Blazor Web Appを使うテンプレ）
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
-// Dapperの設定: C#のPascalCaseプロパティをPostgreSQLのsnake_case列名に自動マッピングする
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 DefaultTypeMap.MatchNamesWithUnderscores = true;
 
 // データベース接続文字列を読み込む
@@ -25,56 +18,34 @@ if (string.IsNullOrEmpty(connectionString))
 }
 
 // IDbConnectionFactory の実装を登録
-// NpgsqlConnectionFactory は、IDbConnectionFactory を実装し、
-// コンストラクタで接続文字列（connectionString）を受け取ることを想定しています。
 builder.Services.AddSingleton<IDbConnectionFactory>(
     sp => new NpgsqlConnectionFactory(connectionString));
 
-// ShohinRepositoryをDIコンテナへ登録
+// DIコンテナへ登録
 builder.Services.AddScoped<IShohinRepository, ShohinRepository>();
-
-// ShohinServiceをDIコンテナへ登録
 builder.Services.AddScoped<IShohinService, ShohinService>();
-
-// 仕入RepositoryをDIコンテナへ登録
 builder.Services.AddScoped<IShiireRepository, ShiireRepository>();
-
-// ISqlExecutor の実装を登録
-builder.Services.AddScoped<ISqlExecutor, SqlExecutor>();
-
-// 仕入ServiceをDIコンテナへ登録
 builder.Services.AddScoped<IShiireService, ShiireService>();
-
-// 在庫ServiceをDIコンテナへ登録
+builder.Services.AddScoped<ISqlExecutor, SqlExecutor>();
 builder.Services.AddScoped<IZaikoService, ZaikoService>();
 
-
-// ... (続くコード) ...
-
-// アプリケーションインスタンスの構築
 var app = builder.Build();
 
 // HTTPリクエストパイプラインの設定
-// もし開発環境以外の場合はエラーハンドラー
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-
-    // Hsts(HTTP Strict Transport Security)を使用し、ブラウザにHTTPS通信を強制
     app.UseHsts();
 }
 
-// HTTPリクエストをHTTPSにリダイレクト
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
 app.UseAntiforgery();
-
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-
 app.Run();
-namespace InbentorySystem // ★★★ ここはあなたのメインプロジェクトの名前空間に合わせること ★★★
+
+namespace InbentorySystem
 {
     public partial class Program { }
 }

@@ -2,38 +2,28 @@ classDiagram
         direction LR
 
         class MainForm{
-            <<Form>>
+
             -Button btnShohin
             -Button btnShiire
             -Button btnUriage
             -Button btnShiiresaki
             -Button btnReportMenu
-            -Button btn
-            +void onClick_btnShohin()
-            +void onClick_btnShiire()
-            +void onClick_btnUriage()
-            +void onClick_btnShiiresaki()
-            +void onClick_btnReportMenu()
+
         }
 
-        class ShohinForm{
-            <<ChildForm>>
+        class ShohinMenuForm{
         }
-        class ShiireForm{
-            <<ChildForm>>
+        class ShiireMenuForm{
         }
-        class UriageForm{
-            <<ChildForm>>
+        class UriageMenuForm{
         }
-        class ShiiresakiForm{
-            <<ChildForm>>
+        class ShiiresakiMenuForm{
         }
         class ReportMenuForm{
-            <<ChildForm>>
         }
 
-        MainForm --> ShohinForm : 起動
-        MainForm --> ShiireForm : 起動
-        MainForm --> UriageForm : 起動
-        MainForm --> ShiiresakiForm : 起動
+        MainForm --> ShohinMenuForm : 起動
+        MainForm --> ShiireMenuForm : 起動
+        MainForm --> UriageMenuForm : 起動
+        MainForm --> ShiiresakiMenuForm : 起動
         MainForm --> ReportMenuForm : 起動

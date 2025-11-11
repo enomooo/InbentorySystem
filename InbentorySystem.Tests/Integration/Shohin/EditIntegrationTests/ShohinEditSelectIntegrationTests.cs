@@ -1,14 +1,11 @@
 ﻿using Bunit;
 using Bunit.TestDoubles;
-using InbentorySystem.Components.Pages.Shohin;
-using InbentorySystem.Components.Pages.Shohin.Edit;
-using InbentorySystem.Data;
 using InbentorySystem.Data.Models;
-using InbentorySystem.Services;
+using InbentorySystem.Infrastructure.Interfaces;
+using InbentorySystem.Ui.ShohinKanriUi.Shohin;
+using InbentorySystem.Ui.ShohinKanriUi.Shohin.Edit;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using System.Reflection.Metadata;
-using Xunit;
 
 namespace InbentorySystem.Tests.Integration.Shohin.EditIntegrationTests
 {

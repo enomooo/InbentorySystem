@@ -1,13 +1,11 @@
 ﻿using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using Xunit;
-using InbentorySystem.Components.Pages.Shohin;
 using InbentorySystem.Data.Models;
-using InbentorySystem.Services;
 using Bunit.TestDoubles;
-using InbentorySystem.Data;
-using System.Reflection.Metadata;
+using InbentorySystem.Infrastructure.Interfaces;
+using InbentorySystem.Services.Interfaces;
+using InbentorySystem.Ui.ShohinKanriUi.Shohin;
 
 namespace InbentorySystem.Tests.Unit.Pages.Shohin.ShohinIndexPageTexts
 {

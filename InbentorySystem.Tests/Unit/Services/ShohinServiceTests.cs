@@ -4,9 +4,9 @@ using InbentorySystem.Data.Models;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using Moq;
-using InbentorySystem.Data;
 using System.ComponentModel;
 using System.Net.WebSockets;
+using InbentorySystem.Infrastructure.Interfaces;
 
 namespace InbentorySystem.Tests.Unit.Services
 {

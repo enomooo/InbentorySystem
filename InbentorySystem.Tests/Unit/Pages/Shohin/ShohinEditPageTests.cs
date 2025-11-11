@@ -1,14 +1,10 @@
 ﻿using Bunit;
-using InbentorySystem.Components.Pages.Shohin;
-using InbentorySystem.Components.Pages.Shohin.Edit;
-using InbentorySystem.Data;
 using InbentorySystem.Data.Models;
+using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Services;
+using InbentorySystem.Ui.ShohinKanriUi.Shohin.Edit;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using System.Net.WebSockets;
-using System.Reflection.Metadata;
-using Xunit;
 
 namespace InbentorySystem.Tests.Unit.Pages.Shohin
 {

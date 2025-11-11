@@ -1,6 +1,7 @@
 ﻿using Dapper;
-using InbentorySystem.Data;
 using InbentorySystem.Data.Models;
+using InbentorySystem.Infrastructure.Interfaces;
+using InbentorySystem.Services.Interfaces;
 using System.Data;
 using System.Threading.Tasks;
 

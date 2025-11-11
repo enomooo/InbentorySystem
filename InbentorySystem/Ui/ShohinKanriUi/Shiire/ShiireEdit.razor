@@ -1,0 +1,115 @@
+﻿@page "/shiire/edit/{ShiireNo}"
+@using InbentorySystem.Data
+@using InbentorySystem.Data.Models
+@using InbentorySystem.Infrastructure.Interfaces
+@inject IShiireRepository ShiireRepository
+@inject NavigationManager NavigationManager
+
+<PageTitle>仕入修正</PageTitle>
+
+<h1>仕入修正</h1>
+
+@if (IsLoading)
+{
+	<p>読み込み中...</p>
+}
+else if (Shiire == null)
+{
+	<div class="alert alert-danger">該当する仕入伝票が見つかりません</div>
+}
+
+else
+{
+	<EditForm Model="@Shiire" OnValidSubmit="UpdateShiireAsync">
+		<DataAnnotationsValidator/>
+
+		<div class="mb-3">
+			<label class="form-label">仕入日付</label>
+			<InputDate @bind-Value="Shiire.ShiireNengappi" class="form-control" disabled/>
+		</div>
+
+        <div class="mb-3">
+            <label class="form-label">商品コード</label>
+            <InputText @bind-Value="Shiire.ShohinCode" class="form-control" disabled />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">仕入先コード</label>
+            <InputText @bind-Value="Shiire.ShiiresakiCode" class="form-control" />
+            <ValidationMessage For="@(() => Shiire.ShiiresakiCode)" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">数量</label>
+            <InputNumber @bind-Value="Shiire.Quantity" class="form-control" />
+            <ValidationMessage For="@(() => Shiire.Quantity)" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">仕入値</label>
+            <InputNumber @bind-Value="Shiire.Shiirene" class="form-control" />
+            <ValidationMessage For="@(() => Shiire.Shiirene)" />
+        </div>
+
+        <div class="d-flex gap-3 mt-4">
+            <button type="submit" class="btn btn-warning">
+                <i class="bi bi-pencil-square"></i>　修正を確定
+            </button>
+			<button type="button" class="btn btn-secondary" @onclick='() => NavigationManager.NavigateTo("/shiire/index")'>
+                <i class="bi bi-arrow-left"></i> メニューに戻る    
+            </button> 
+        </div>
+
+
+	</EditForm>
+}
+
+@code {
+    [Parameter]
+    public string ShiireNo { get; set; } = string.Empty;
+
+    private ShiireModel? Shiire;
+    private bool IsLoading = true;
+    private string? Message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var parts = ShiireNo.Split('|');
+            if (parts.Length == 2)
+            {
+                Shiire = await ShiireRepository.GetByDateAndCodeAsync(parts[0], parts[1]);
+            }
+        }
+        catch(Exception ex)
+        {
+            Message = $"読み込み中にエラーが発生しました：{ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task UpdateShiireAsync()
+    {
+        try
+        {
+            var affected = await ShiireRepository.UpdateAsync(Shiire!);
+            if (affected > 0)
+            {
+                Message = "修正が完了しました。";
+                NavigationManager.NavigateTo("/shiire/index", forceLoad: true);
+            }
+            else
+            {
+                Message = "修正に失敗しました。";
+            }
+        }
+        catch(Exception ex)
+        {
+            Message = $"修正中にエラーが発生しました: {ex.Message}";
+        }
+    }
+}

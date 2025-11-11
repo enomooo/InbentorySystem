@@ -1,4 +1,5 @@
 ﻿using InbentorySystem.Data.Models;
+using InbentorySystem.Services.Interfaces;
 using System.Collections.Generic;
 
 namespace InbentorySystem.Services
@@ -9,20 +10,34 @@ namespace InbentorySystem.Services
     /// </summary>
     public class ShiireService : IShiireService
     {
-        // 検索結果の一時保存
+        /// <summary>
+        /// 検索結果の一時保存
+        /// </summary>
         public List<ShiireModel> SearchResults { get; private set; } = new();
 
-        // 検索条件の保持
+        /// <summary>
+        /// 検索条件の仕入年月の保持
+        /// </summary>
         public string? LastDateFrom { get; private set; }
+
+        /// <summary>
+        /// 検索条件の商品コードの保持
+        /// </summary>
         public string? LastCodeKeyword { get; private set; }
 
-        // 登録結果の保持
+        /// <summary>
+        /// 登録結果の保持
+        /// </summary>
         public ShiireModel? LastRegisteredShiire { get; private set; }
 
-        // 修正結果の保持
+        /// <summary>
+        /// 修正結果の保持
+        /// </summary>
         public ShiireModel? LastEditedShiire { get; private set; }
 
-        // 削除結果の保持
+        /// <summary>
+        /// 削除結果の保持
+        /// </summary>
         public ShiireModel? LastDeletedShiire { get; private set; }
 
         /// <summary>

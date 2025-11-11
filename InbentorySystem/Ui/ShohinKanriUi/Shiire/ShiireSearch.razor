@@ -1,0 +1,103 @@
+﻿@page "/shiirelist"
+@using System.Globalization
+@using InbentorySystem.Data.Models
+@using InbentorySystem.Services
+@using InbentorySystem.Services.Interfaces
+@inject NavigationManager NavigationManager
+
+
+<PageTitle>仕入伝票一覧</PageTitle>
+
+<h1>仕入伝票一覧</h1>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+	<div class="@(IsError ? "alert alert-danger" : "alert alert-info")" role="alert">
+		@Message
+	</div>
+}
+
+<p class="text-muted">
+	検索結果が複数件でした。処理対象の伝票を選択してください。
+</p>
+
+<div class="mb-3">
+	<button class="btn btn-secondary" @onclick="NavigateBack">
+		<i class="bi bi-arrow-left"></i> 検索メニューに戻る
+	</button>
+</div>
+
+@* --- 仕入伝票一覧テーブル --- *@
+@if (ShiireItems != null && ShiireItems.Count > 0)
+{
+	<div class="table-responsive">
+		<table class="table table-hover table-striped">
+			<thead class="table-dark">
+				<tr>
+					<th>選択</th>
+					<th>仕入番号</th>
+					<th>仕入年月日</th>
+					<th>商品コード</th>
+					<th>仕入先コード</th>
+					<th>数量</th>
+					<th>仕入値</th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var shiire in ShiireItems)
+				{
+					<tr @onclick="() => SelectShiire(shiire)"
+						class="@(SelectedShiire == shiire ? "table-primary" : "")">
+
+						<td>
+							<input type="radio"
+								   name="selectedShiire"
+								   checked="@(SelectedShiire == shiire)"
+								   @onchange="() => SelectShiire(shiire)" />
+						</td>
+						<td>@shiire.ShiireNo</td>
+						<td>@shiire.ShiireNengappi.ToString("yyyy-MM-dd")</td>
+						<td>@shiire.ShohinCode</td>
+						<td>@shiire.ShiiresakiCode</td>
+						<td>@shiire.Quantity</td>
+						<td>@shiire.Shiirene.ToString("C0", CultureInfo.CurrentCulture)</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+@code {
+	[Inject]
+	public IShiireService ShiireService { get; set; } = default!;
+
+	private List<ShiireModel> ShiireItems { get; set; } = new();
+	private ShiireModel? SelectedShiire { get; set; }
+	private string? Message { get; set; }
+	private bool IsError { get; set; } = false;
+
+	protected override void OnInitialized()
+	{
+		ShiireItems = ShiireService.GetShiireList();
+		if (ShiireItems == null || ShiireItems.Count == 0)
+		{
+			Message = "検索結果が見つかりません";
+			IsError = true;
+		}
+	}
+
+	private void SelectShiire(ShiireModel shiire)
+	{
+		SelectedShiire = shiire;
+	}
+
+	/// <summary>
+	/// ページを戻る
+	/// </summary>
+	private void NavigateBack()
+	{
+		NavigationManager.NavigateTo("/shiire/index");
+	}
+}
+

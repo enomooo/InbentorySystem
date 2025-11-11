@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using InbentorySystem.Data;
 using InbentorySystem.Data.Models;
+using InbentorySystem.Infrastructure.Interfaces;
+using InbentorySystem.Services.Interfaces;
 
 namespace InbentorySystem.Services
 {

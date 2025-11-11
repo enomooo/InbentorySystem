@@ -1,0 +1,37 @@
+﻿@page "/Error"
+@using System.Diagnostics
+
+<PageTitle>エラー</PageTitle>
+
+<h1 class="text-danger">エラーが発生しました</h1>
+<h2 class="text-danger">リクエストの処理中に問題が発生しました。</h2>
+
+@if (ShowRequestId)
+{
+	<p>
+		<strong>リクエストID:</strong> <code>@RequestId</code>
+	</p>
+}
+
+<h3>開発モードについて</h3>
+<p>
+	<strong>開発モード</strong>に切り替えると、発生したエラーの詳細情報が表示されます。
+</p>
+<p>
+	<strong>注意:</strong> 本番環境では開発モードを有効にしないでください。
+	例外の詳細情報がユーザーに表示されることで、機密情報が漏れる可能性があります。
+</p>
+<p>
+		ローカルでのデバッグを行う場合は、環境変数<strong>ASPNETCORE_ENVIRONMENT</strong>を<strong>Development</strong>に設定し、アプリケーションを再起動してください。
+</p>
+
+@code {
+	[CascadingParameter]
+	private HttpContext? HttpContext { get; set; }
+
+	private string? RequestId { get; set; }
+	private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+
+	protected override void OnInitialized() =>
+		RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}
