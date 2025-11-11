@@ -77,6 +77,7 @@ namespace InbentorySystem.Data
             }
         }
 
+        public record ShohinCodeParam(string ShohinCode);
         /// <summary>
         /// 指定された商品コードに基づいて単一の商品データ（在庫数を含む）を取得する
         /// </summary>
@@ -88,7 +89,7 @@ namespace InbentorySystem.Data
 
             using (var connection = _factory.CreateConnection())
             {
-                var param = new { ShohinCode = shohinCode };
+                var param = new ShohinCodeParam(shohinCode); 
                 return await _sqlExecutor.QueryFirstOrDefaultAsync<ShohinModel>(connection, sql, param);
             }
         }

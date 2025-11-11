@@ -174,7 +174,7 @@ namespace InbentorySystem.Tests.Unit.Services
         }
 
         [Fact]// UT-SH-11: DeleteShohinAsyncがリポジトリに正しく移譲される
-        public async Task DelegatesDeleteToRepository_WhenLastEditedShohinIsSet()
+        public async Task DelegatesDeleteToRepository_WhenLastShohinIsSet()
         {
             // Arrange
             var mockRepo = new Mock<IShohinRepository>();
@@ -190,7 +190,7 @@ namespace InbentorySystem.Tests.Unit.Services
                 ShiiresakiCode = "S010"
             };
 
-            service.SetLastEditedShohin(model);
+            service.SetLastDeletedShohin(model);
 
             // Act
             await service.DeleteShohinAsync(mockRepo.Object);

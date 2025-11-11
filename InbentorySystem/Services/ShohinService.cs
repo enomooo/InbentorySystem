@@ -81,7 +81,7 @@ namespace InbentorySystem.Services
         /// <summary>
         /// 削除対象の保持
         /// </summary>
-        public void SetLastDeletedshohin(ShohinModel model)
+        public void SetLastDeletedShohin(ShohinModel model)
         {
             _lastDeletedShohin = model;
         }
@@ -115,6 +115,11 @@ namespace InbentorySystem.Services
             return string.IsNullOrWhiteSpace(keyword)
                 ? "/shohin/list"
                 : $"/shohin/list?q={Uri.EscapeDataString(keyword)}";
+        }
+
+        public void SetLastDeletedshohin(ShohinModel model)
+        {
+            throw new NotImplementedException();
         }
     }
 }

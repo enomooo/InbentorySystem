@@ -69,7 +69,14 @@ namespace InbentorySystem.Tests.Unit.Repositories
             var repo = new ShohinRepository(mockFactory.Object, mockExecutor.Object);
 
             // ACT
-            await repo.DeleteAsync(code);
+            try
+            {
+                await repo.DeleteAsync(code);
+            }
+            catch (Exception)
+            {
+                // 例外は握りつぶす(Rollbackするかの検証にため)
+            }
 
             // ASSERT(Rollback)
             mockTransaction.Verify(t => t.Rollback(), Times.Once);
@@ -105,6 +112,7 @@ namespace InbentorySystem.Tests.Unit.Repositories
             mockTransaction.Verify(t => t.Commit(), Times.Once);
         }
 
+        public record ShohinCodeParam(string ShohinCode);
         [Fact]　// UT-SR-11: 商品削除のテスト（正常系）
         public async Task GetByCodeAsyncで指定コードの商品が取得出来ること()
         {
@@ -115,20 +123,22 @@ namespace InbentorySystem.Tests.Unit.Repositories
 
             mockConnection.Setup(c => c.Open());
             mockFactory.Setup(f => f.CreateConnection()).Returns(mockConnection.Object);
-
-            mockExecutor.Setup(e => e.QuerySingleOrDefaultAsync<ShohinModel>(
-                It.IsAny<string>(),
-                It.IsAny<object>(),
-                null
-                )).ReturnsAsync(new ShohinModel
-                {
-                    ShohinCode = "A003",
-                    ShohinMeiKanji = "ペティナイフ",
-                    ShohinMeiKana = "ぺてぃないふ",
-                    Shiirene = 800,
-                    Urine = 1600,
-                    ShiiresakiCode = "S004"
-                });
+            mockExecutor.Setup(e => e.QueryFirstOrDefaultAsync<ShohinModel>(
+         // IDbConnection の検証を緩和 (IsAny)
+         It.IsAny<IDbConnection>(),
+         // SQL文字列は厳密にチェック
+         It.Is<string>(sql => sql.Contains("WHERE shohin_code = @ShohinCode")),
+         // パラメータオブジェクトの検証を緩和 (IsAny)
+         It.IsAny<object>()
+                 )).ReturnsAsync(new ShohinModel
+    {
+        ShohinCode = "A003",
+        ShohinMeiKanji = "ペティナイフ",
+        ShohinMeiKana = "ぺてぃないふ",
+        Shiirene = 800,
+        Urine = 1600,
+        ShiiresakiCode = "S004"
+    });
 
             var repo = new ShohinRepository(mockFactory.Object, mockExecutor.Object);
 
