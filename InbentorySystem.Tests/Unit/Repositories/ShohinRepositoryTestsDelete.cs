@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Net.WebSockets;
 using Microsoft.Extensions.Options;
 using InbentorySystem.Infrastructure.Interfaces;
+using InbentorySystem.Infrastructure.Repository;
 
 
 namespace InbentorySystem.Tests.Unit.Repositories

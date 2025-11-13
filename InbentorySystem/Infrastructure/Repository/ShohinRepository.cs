@@ -8,7 +8,7 @@ using System.Net.WebSockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Transactions;
 
-namespace InbentorySystem.Data
+namespace InbentorySystem.Infrastructure.Repository
 {
     /// <summary>
     /// Npgaqlドライバを使用してPostgreSQLへの接続して（CRUD処理）を担当するリポジトリクラス

@@ -4,7 +4,7 @@ using Dapper;
 using System.Linq;
 using InbentorySystem.Infrastructure.Interfaces;
 
-namespace InbentorySystem.Data
+namespace InbentorySystem.Infrastructure.Repository
 {
     public class ShiireRepository : IShiireRepository
     {
@@ -159,7 +159,7 @@ namespace InbentorySystem.Data
                         var zaikoParam = new
                         {
                             shiire.ShohinCode,
-                            quantityDifference = quantityDifference
+                            quantityDifference
                         };
 
                         await connection.ExecuteAsync(updateZaikoSql, zaikoParam, transaction: transaction);

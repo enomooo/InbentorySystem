@@ -2,8 +2,8 @@
 using Bunit.TestDoubles;
 using InbentorySystem.Data.Models;
 using InbentorySystem.Infrastructure.Interfaces;
-using InbentorySystem.Ui.ShohinKanriUi.Shohin.Delete;
-using InbentorySystem.Ui.ShohinKanriUi.Shohin.Edit;
+using InbentorySystem.Pages.Ui.Shohin.Delete;
+using InbentorySystem.Pages.Ui.Shohin.Edit;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 

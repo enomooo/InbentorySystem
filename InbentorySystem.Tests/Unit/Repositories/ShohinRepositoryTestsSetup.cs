@@ -1,5 +1,5 @@
-﻿using InbentorySystem.Data;
-using InbentorySystem.Infrastructure.Interfaces;
+﻿using InbentorySystem.Infrastructure.Interfaces;
+using InbentorySystem.Infrastructure.Repository;
 using Moq;
 using System;
 using System.Collections.Generic;

@@ -2,7 +2,7 @@
 using InbentorySystem.Data.Models;
 using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Services;
-using InbentorySystem.Ui.ShohinKanriUi.Shohin.Edit;
+using InbentorySystem.Pages.Ui.Shohin.Edit;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 

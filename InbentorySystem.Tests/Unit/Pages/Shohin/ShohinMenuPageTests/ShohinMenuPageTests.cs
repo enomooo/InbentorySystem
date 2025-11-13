@@ -5,7 +5,7 @@ using InbentorySystem.Data.Models;
 using Bunit.TestDoubles;
 using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Services.Interfaces;
-using InbentorySystem.Ui.ShohinKanriUi.Shohin;
+using InbentorySystem.Pages.Ui.Shohin;
 
 namespace InbentorySystem.Tests.Unit.Pages.Shohin.ShohinIndexPageTexts
 {

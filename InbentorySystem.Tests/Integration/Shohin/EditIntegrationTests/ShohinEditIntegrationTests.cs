@@ -1,6 +1,7 @@
 ﻿using InbentorySystem.Data;
 using InbentorySystem.Data.Models;
 using InbentorySystem.Infrastructure.Interfaces;
+using InbentorySystem.Infrastructure.Repository;
 using InbentorySystem.Services;
 using Moq;
 using System;

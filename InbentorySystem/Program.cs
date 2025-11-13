@@ -1,9 +1,10 @@
 using Dapper;
 using InbentorySystem.Data;
 using InbentorySystem.Infrastructure.Interfaces;
+using InbentorySystem.Infrastructure.Repository;
+using InbentorySystem.Pages;
 using InbentorySystem.Services;
 using InbentorySystem.Services.Interfaces;
-using InbentorySystem.Ui;
 
 // Webアプリケーションを構築するためのホストビルダーを作成
 var builder = WebApplication.CreateBuilder(args);
