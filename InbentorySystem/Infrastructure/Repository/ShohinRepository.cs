@@ -1,5 +1,5 @@
 ﻿using Dapper;
-using InbentorySystem.Data.Models;
+using InbentorySystem.Infrastructure.Models;
 using InbentorySystem.Infrastructure.Interfaces;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.Extensions.Configuration;
@@ -7,6 +7,7 @@ using System.Data;
 using System.Net.WebSockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Transactions;
+using InbentorySystem.Data.Models;
 
 namespace InbentorySystem.Infrastructure.Repository
 {
@@ -60,21 +61,26 @@ namespace InbentorySystem.Infrastructure.Repository
         public async Task<List<ShohinModel>> SearchByKeywordAsync(string keyword)
         {
             var sql = @"
-                SELECT
-                    *
-                FROM
-                    m_shohin M
-                WHERE
-                    shohin_mei_kanji ILIKE @Keyword OR shohin_mei_kana ILIKE @Keyword;";
+        SELECT
+            shohin_code AS ShohinCode,
+            shohin_mei_kanji AS ShohinMeiKanji,
+            shohin_mei_kana AS ShohinMeiKana,
+            shiirene AS Shiirene,
+            urine AS Urine,
+            siiresaki_code AS ShiiresakiCode
+        FROM
+            m_shohin M
+        WHERE
+            shohin_mei_kanji ILIKE @Keyword
+        OR                                  -- ORの前後にもスペースが必要
+            shohin_mei_kana ILIKE @Keyword;
+        "; 
+            var param = new { Keyword = $"%{keyword}%" };
 
-            // Dapperはパラメータを直接オブジェクトに渡せる
-            using (var connection = _factory.CreateConnection())
-            {
-                var param = new { Keyword = $"%{keyword}%" };
+            using var connection = _factory.CreateConnection();
 
-                var result = await _sqlExecutor.QueryAsync<ShohinModel>(connection, sql, param);
-                return result.ToList();
-            }
+            var result = await _sqlExecutor.QueryAsync<ShohinModel>(connection, sql, param);
+            return result.ToList();
         }
 
         public record ShohinCodeParam(string ShohinCode);
@@ -89,7 +95,7 @@ namespace InbentorySystem.Infrastructure.Repository
 
             using (var connection = _factory.CreateConnection())
             {
-                var param = new ShohinCodeParam(shohinCode); 
+                var param = new ShohinCodeParam(shohinCode);
                 return await _sqlExecutor.QueryFirstOrDefaultAsync<ShohinModel>(connection, sql, param);
             }
         }

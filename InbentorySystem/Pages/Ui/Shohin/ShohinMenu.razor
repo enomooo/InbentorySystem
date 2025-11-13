@@ -1,13 +1,15 @@
 ﻿@page "/shohin/menu"
-@using InbentorySystem.Data
 @using InbentorySystem.Data.Models
+@using InbentorySystem.Infrastructure
 @using InbentorySystem.Infrastructure.Interfaces
+@using InbentorySystem.Infrastructure.Models
 @using InbentorySystem.Services
+@using InbentorySystem.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
 @inject IShohinRepository ShohinRepo
 @inject NavigationManager NavManager
 @inject IShohinService ShohinService
-@using InbentorySystem.Services.Interfaces
-@using Microsoft.AspNetCore.Components.Forms
+@inject IShiiresakiRepository ShiiresakiRepo
 
 <PageTitle>商品管理メニュー</PageTitle>
 
@@ -85,7 +87,22 @@
 			<div class="row mb-3">
 				<label for="ShiiresakiCode" class="col-sm-3 col-form-label">仕入先コード</label>
 				<div class="col-sm-4">
-					<InputText id="ShiiresakiCode" @bind-Value="NewModel.ShiiresakiCode" class="form-control" />
+					<InputSelect id="ShiiresakiCode" @bind-Value="NewModel.ShiiresakiCode" class="form-select" >
+					@if (ShiiresakiList == null || !ShiiresakiList.Any())
+					{
+						<option value="">データを読み込み中...</option>
+					}
+					else
+					{
+						<option value="">選択してください</option>
+						@foreach (var shiiresaki in ShiiresakiList)
+						{
+							<option value="@shiiresaki.ShiiresakiCode">
+					@shiiresaki.ShiiresakiCode : @shiiresaki.ShiiresakiMeiKanji
+							</option>
+						}
+					}
+					</InputSelect>
 					<ValidationMessage For="@(() => NewModel.ShiiresakiCode)" />
 				</div>
 			</div>
@@ -152,6 +169,14 @@
 
 	// 新規登録フォームとバインドされるモデル
 	private ShohinModel NewModel = new();
+	private List<ShiiresakiModel> ShiiresakiList { get; set; } = new();
+
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadShiiresakiDataAsync();
+	}
+
+
 
 	/// <summary>
 	/// SearchAndNavigeateメソッドで実行する処理の種別を定義
@@ -161,6 +186,30 @@
 		Search,
 		Edit,
 		Delete
+	}
+
+	/// <summary>
+	/// 仕入先データを取得する
+	/// </summary>
+	/// <returns>全ての仕入先</returns>
+	private async Task LoadShiiresakiDataAsync()
+	{
+		try
+		{
+			if (ShiiresakiRepo != null)
+			{
+				ShiiresakiList = await ShiiresakiRepo.GetAllAsync();
+			}
+			else
+			{
+				RegisterErrorMessage = "仕入先データ取得のためのリポジトリが初期化されていません。";
+			}
+		}
+		catch(Exception ex)
+		{
+			RegisterErrorMessage = $"仕入先データのロード中にエラーが発生しました: {ex.Message}";
+			ShiiresakiList = new List<ShiiresakiModel>();
+		}
 	}
 
 	/// <summary>
@@ -175,31 +224,23 @@
 
 		try
 		{
-			// キーワード未入力時は全件取得
-			if (string.IsNullOrWhiteSpace(keyword))
-			{
-				results = await ShohinRepo.GetAllAsync();
-			}
+			results = string.IsNullOrWhiteSpace(keyword)
+					? await ShohinRepo.GetAllAsync()
+					: await ShohinRepo.SearchByKeywordAsync(keyword);
 
-			// キーワード入力時は部分一致検索
+			if (results.Count == 0)
+			{
+				ErrorMessage = "該当する商品はありませんでした";
+			}
 			else
 			{
-				results = await ShohinRepo.SearchByKeywordAsync(keyword);
+				ShohinService.SetSearchResults(results);
+
+				var query = string.IsNullOrWhiteSpace(keyword) ? "all" : keyword;
+				NavManager.NavigateTo($"/shohin/search?q={query}");
 			}
 
-			var targetUrl = ShohinService.GetNavigationUri(keyword);
 
-			// 該当商品がない場合、エラーメッセージを表示して終了(return == 0)
-			if (string.IsNullOrEmpty(targetUrl))
-			{
-				ErrorMessage = "該当する商品がありませんでした。";
-			}
-
-			// returnが1以上なら検索画面に遷移
-			else
-			{
-				NavManager.NavigateTo(targetUrl);
-			}
 		}
 		catch (Exception ex)
 		{
@@ -221,7 +262,7 @@
 	/// </summary>
 	private void ResetEditForm()
 	{
-		SearchKeyword = string.Empty;
+		EditSearchKeyword = string.Empty;
 		ErrorMessage = string.Empty;
 	}
 
@@ -230,7 +271,7 @@
 	/// </summary>
 	private void ResetDeleteForm()
 	{
-		SearchKeyword = string.Empty;
+		DeleteSearchKeyword = string.Empty;
 		ErrorMessage = string.Empty;
 	}
 
@@ -250,12 +291,13 @@
 				return;
 			}
 
-			// 登録実行
 			await ShohinRepo.RegisterAsync(NewModel);
 
 			// 実行後の処理
+			ShohinService.SetLastRegisteredShohin(NewModel);
+			var registeredModel = NewModel;
 			NewModel = new ShohinModel();
-			NavManager.NavigateTo("/shohin/menu", forceLoad: true);
+			NavManager.NavigateTo("/shohin/register");
 		}
 		catch (Exception ex)
 		{

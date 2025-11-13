@@ -15,6 +15,7 @@ namespace InbentorySystem.Services
     {
         // 各種検索結果の一時保存
         private List<ShohinModel> _searchResults = new();
+        private ShohinModel? _lastRegisteredShohin;
         private ShohinModel? _lastEditedShohin;
         private ShohinModel? _lastDeletedShohin;
         private List<ShohinModel> _shohinList = new();
@@ -44,6 +45,32 @@ namespace InbentorySystem.Services
         public List<ShohinModel> GetSearchResults()
         {
             return _searchResults;
+        }
+
+        /// <summary>
+        /// 最後に登録された商品モデルを保持する
+        /// </summary>
+        /// <param name="shohin">登録する商品モデル</param>
+        public void SetLastRegisteredShohin(ShohinModel shohin)
+        {
+            _lastRegisteredShohin = shohin; 
+        }
+
+        /// <summary>
+        /// 最後に登録された商品モデルを取得する
+        /// </summary>
+        /// <returns>登録する商品モデル</returns>
+        public ShohinModel? GetLastRegisteredShohin()
+        {
+            return _lastRegisteredShohin;
+        }
+
+        /// <summary>
+        /// 最後に登録された商品モデルのキャッシュをクリアする
+        /// </summary>
+        public void ClearLastRegisteredShohin()
+        {
+            _lastRegisteredShohin = null;
         }
 
         /// <summary>
@@ -113,13 +140,8 @@ namespace InbentorySystem.Services
                 return string.Empty;
 
             return string.IsNullOrWhiteSpace(keyword)
-                ? "/shohin/list"
+                ? "/shohin/list?q=all"
                 : $"/shohin/list?q={Uri.EscapeDataString(keyword)}";
-        }
-
-        public void SetLastDeletedshohin(ShohinModel model)
-        {
-            throw new NotImplementedException();
         }
     }
 }

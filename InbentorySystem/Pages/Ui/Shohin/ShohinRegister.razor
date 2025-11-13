@@ -1,0 +1,108 @@
+﻿@page "/shohin/register"
+@using InbentorySystem.Data.Models
+@using InbentorySystem.Infrastructure
+@using InbentorySystem.Services.Interfaces
+@using InbentorySystem.Infrastructure.Repository
+@using InbentorySystem.Infrastructure.Interfaces
+@inject IShohinRepository ShohinRepo
+@inject NavigationManager NavManager
+@inject IShohinService ShohinService
+
+<h1>商品登録表示</h1>
+
+@if (RegisteredShohin == null)
+{
+	<div class="alert alert-danger">
+		<h4 class="alert-heading">処理エラーが発生しました</h4>
+		<p>登録直後の商品データを取得できませんでした。システムの状態が不正であるか、予期せぬ画面遷移が発生した可能性があります。</p>
+		<hr>
+		<p class="mb-0">お手数ですが、「商品管理メニューに戻る」ボタンを押して、再度登録操作を行ってください。</p>
+	</div>
+}
+
+else
+{
+	<div class="alert alert-success p-4">
+		<p class="h4 text-success"> 以下の商品を登録しました。</p>
+
+		<h3 class="mt-4">商品テーブル</h3>
+		@RenderShohinTable(RegisteredShohin)
+		<hr class="my-4" />
+	</div>
+	<div class="alert alert-success p-4">
+		<p class="h4 text-success"> 以下の在庫を登録しました。</p>
+
+		<h3 class="mt-4">在庫テーブル</h3>
+		@RenderZaikoTable(RegisteredShohin.ShohinCode, 0)
+	</div>
+}
+
+<button class="btn btn-secondary w-100 mb-3" @onclick="GoBack">
+	<span class="pointer-event oi-arrow-left"></span>商品管理メニューへ戻る
+</button>
+
+@code
+{
+	public ShohinModel? RegisteredShohin { get; set; }
+
+	protected override void OnInitialized()
+	{
+		RegisteredShohin = ShohinService.GetLastRegisteredShohin();
+	}
+
+	/// <summary>
+	/// 商品テーブル表示用ヘルパーメソッド
+	/// </summary>
+	private RenderFragment RenderShohinTable(ShohinModel shohin) =>@<table class="table table-bordered table-sm">
+		<thead class="thead-dark">
+			<tr>
+				<th>商品コード</th>
+				<th>商品名（漢字）</th>
+				<th>商品名（かな）</th>
+				<th class="text-end">仕入値</th>
+				<th class="text-end">売値</th>
+				<th>仕入先コード</th>
+			</tr>
+		</thead>
+
+		<tbody>
+			<tr>
+				<td>@shohin.ShohinCode</td>
+				<td>@shohin.ShohinMeiKanji</td>
+				<td>@shohin.ShohinMeiKana</td>
+				<td class="text-end">@shohin.Shiirene.ToString("N0")</td>
+				<td class="text-end">@shohin.Urine.ToString("N0")</td>
+				<td>@shohin.ShiiresakiCode</td>
+			</tr>
+		</tbody>
+	</table>
+	;
+
+	/// <summary>
+	/// 在庫テーブル表示用ヘルパーメソッド
+	/// </summary>
+	private RenderFragment RenderZaikoTable(string shohinCode, int quantity) =>@<table class="table table-bordered table-sm">
+		<thead class="table-light">
+			<tr>
+				<th>商品コード</th>
+				<th>数量</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>@shohinCode</td>
+				<td>@quantity.ToString("N0") (常に0)</td>
+			</tr>
+		</tbody>
+	</table>;
+
+	/// <summary>
+	/// 商品管理メニュー画面に戻る処理
+	/// </summary>
+	private void GoBack()
+	{
+		ShohinService.ClearLastRegisteredShohin();
+		NavManager.NavigateTo("/shohin/menu");
+	}
+
+}

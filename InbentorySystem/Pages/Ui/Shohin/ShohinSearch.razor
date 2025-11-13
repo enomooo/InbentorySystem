@@ -9,10 +9,6 @@
 <PageTitle>商品検索結果</PageTitle>
 <h1>商品検索結果一覧</h1>
 
-<button class="btn btn-secondary mb-3" @onclick="GoBack">
-	<span class="pointer-event oi-arrow-left"></span>商品管理メニューへ戻る
-</button>
-
 @if (IsLoading)
 {
 	<p><em>データを読み込み中です...</em></p>
@@ -35,7 +31,7 @@ else
 				<th>商品名（漢字）</th>
 				<th>商品名（かな）</th>
 				<th class="text-end">仕入値</th>
-				<th class="text-end">売値"</th>
+				<th class="text-end">売値</th>
 				<th>仕入先コード</th>
 			</tr>
 		</thead>
@@ -55,6 +51,10 @@ else
 		</tbody>
 	</table>
 }
+
+<button class="btn btn-secondary w-100 mb-3" @onclick="GoBack">
+	<span class="pointer-event oi-arrow-left"></span>商品管理メニューへ戻る
+</button>
 
 @code {
 	[Parameter]
@@ -80,31 +80,40 @@ else
 	/// <returns></returns>
 	private async Task LoadDataAsync()
 	{
-		IsLoading = true;
-		ErrorMessage = string.Empty;
+		Console.WriteLine($"[DEBUG] q = {q}");
+		Console.WriteLine($"[DEBUG] ShohinRepo is null? {ShohinRepo == null}");
 
-		if (string.IsNullOrEmpty(q))
+		if (ShohinRepo == null)
 		{
-			ErrorMessage = "検索条件が不正です。";
+			ErrorMessage = "システムエラー：商品リポジトリが初期化されていません";
 			IsLoading = false;
 			return;
 		}
 
+		IsLoading = true;
+		ErrorMessage = string.Empty;
+
 		try
 		{
-			// q="all"の場合は全件取得(GetAllAsync)を実行
-			if (q.ToLower() == "all")
+			string keyword;
+			if (string.IsNullOrEmpty(q))
 			{
-				ShohinList = await ShohinRepo.GetAllAsync();
+				keyword = "all";
+				Console.WriteLine("[DEBUG] Empty query treated as 'all'.");
 			}
+
 			else
 			{
-				var keyword = Uri.UnescapeDataString(q);
-				ShohinList = await ShohinRepo.SearchByKeywordAsync(keyword);
+				// Blazorが自動でデコードする（Uri.UnescapeDataStringは不要）
+				keyword = q;
 			}
+			ShohinList = keyword.ToLower() == "all"
+					? await ShohinRepo.GetAllAsync()
+					: await ShohinRepo.SearchByKeywordAsync(keyword);
 		}
 		catch (Exception ex)
 		{
+			Console.WriteLine($"[EXCEPTION] {ex}");
 			ErrorMessage = $"データの取得中にエラーが発生しました:{ex.Message}";
 			ShohinList = new List<ShohinModel>();
 		}

@@ -29,8 +29,17 @@ builder.Services.AddScoped<IShiireRepository, ShiireRepository>();
 builder.Services.AddScoped<IShiireService, ShiireService>();
 builder.Services.AddScoped<ISqlExecutor, SqlExecutor>();
 builder.Services.AddScoped<IZaikoService, ZaikoService>();
+builder.Services.AddScoped<IShiiresakiRepository, ShiiresakiRepository>(sp =>
+    new ShiiresakiRepository(connectionString));
+
+// todo: エラー調査あとで消す
+AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+{
+    Console.WriteLine($"[UNHANDLED EXCEPTION] {e.ExceptionObject}");
+};
 
 var app = builder.Build();
+
 
 // HTTPリクエストパイプラインの設定
 if (!app.Environment.IsDevelopment())

@@ -1,39 +1,41 @@
 ﻿@page "/shohin/edit/form"
 @using InbentorySystem.Data
 @using InbentorySystem.Infrastructure.Interfaces
+@using InbentorySystem.Infrastructure.Models
 @using InbentorySystem.Services
 @using InbentorySystem.Data.Models
 @using InbentorySystem.Services.Interfaces
 @inject IShohinService ShohinService
 @inject NavigationManager NavManager
 @inject IShohinRepository ShohinRepo
+@inject IShiiresakiRepository ShiiresakiRepo
 
 <h1>商品修正フォーム</h1>
 
 @if (EditModel == null)
 {
 	<div class="alert alert-warning">
-		修正対象が選択されていません。<a href="/shohin/index">商品管理メニューに戻る</a>
+		修正対象が選択されていません。<a href="/shohin/menu">商品管理メニューに戻る</a>
 	</div>
 }
 else
 {
-	<EditForm Model="@EditModel" OnVaildSubmit="UpdateShohinAsync">
+	<EditForm Model="@EditModel" OnValidSubmit="UpdateShohinAsync">
 		<DataAnnotationsValidator />
-		<validationSummary />
+		<ValidationSummary />
 
 		<div class="card p-4">
 			<div class="row mb-3">
 				<label for="ShohinCode" class="col-sm-3 col-form-label">商品コード</label>
 				<div class="col-sm-5">
-					<InputText id="ShohinCode" @bind-Value="EditModel.ShohinCode" Disabled />
+					<InputText id="ShohinCode" @bind-Value="EditModel.ShohinCode" class="form-control" Disabled />
 				</div>
 			</div>
 
 			<div class="row mb-3">
 				<label for="KanjiName" class="col-sm-3 col-form-label">商品名（漢字）</label>
 				<div class="col-sm-7">
-					<InputText id="KanjiName" @bind-Value="EditModel.ShohinMeiKanji" />
+					<InputText id="KanjiName" @bind-Value="EditModel.ShohinMeiKanji" class="form-control" />
 					<ValidationMessage For="@(() => EditModel.ShohinMeiKanji)" />
 				</div>
 			</div>
@@ -41,7 +43,7 @@ else
 			<div class="row mb-3">
 				<label for="KanaName" class="col-sm-3 col-form-label">商品名（かな）</label>
 				<div class="col-sm-7">
-					<InputText id="KanaName" @bind-Value="EditModel.ShohinMeiKana" />
+					<InputText id="KanaName" @bind-Value="EditModel.ShohinMeiKana" class="form-control" />
 					<ValidationMessage For="@(() => EditModel.ShohinMeiKana)" />
 				</div>
 			</div>
@@ -49,7 +51,7 @@ else
 			<div class="row mb-3">
 				<label for="Shiirene" class="col-sm-3 col-form-label">仕入値</label>
 				<div class="col-sm-3">
-					<InputNumber id="Shiirene" @bind-Value="EditModel.Shiirene" />
+					<InputNumber id="Shiirene" @bind-Value="EditModel.Shiirene" class="form-control" />
 					<ValidationMessage For="@(() => EditModel.Shiirene)" />
 				</div>
 			</div>
@@ -57,7 +59,7 @@ else
 			<div class="row mb-3">
 				<label for="Urine" class="col-sm-3 col-form-label">売値</label>
 				<div class="col-sm-3">
-					<InputNumber id="Urine" @bind-Value="EditModel.Urine" />
+					<InputNumber id="Urine" @bind-Value="EditModel.Urine" class="form-control" />
 					<ValidationMessage For="@(() => EditModel.Urine)" />
 				</div>
 			</div>
@@ -65,7 +67,21 @@ else
 			<div class="row mb-3">
 				<label for="ShiiresakiCode" class="col-sm-3 col-form-label">仕入先コード</label>
 				<div class="col-sm-4">
-					<InputText id="ShiiresakiCode" @bind-Value="EditModel.ShiiresakiCode" />
+					<InputSelect id="ShiiresakiCode" @bind-Value="EditModel.ShiiresakiCode" class="form-select">
+						@if (ShiiresakiList == null || !ShiiresakiList.Any())
+						{
+							<option value="@EditModel.ShiiresakiCode">データを読み込み中...</option>
+						}
+						else
+						{
+							@foreach (var shiiresaki in ShiiresakiList)
+							{
+								<option value="@shiiresaki.ShiiresakiCode">
+									@shiiresaki.ShiiresakiCode : @shiiresaki.ShiiresakiMeiKanji
+								</option>
+							}
+						}
+					</InputSelect>
 					<ValidationMessage For="@(() => EditModel.ShiiresakiCode)" />
 				</div>
 			</div>
@@ -88,16 +104,32 @@ else
 	// 修正対象の商品データ
 	private ShohinModel? EditModel;
 	private string ErrorMessage = string.Empty;
-	public string ShohinCode { get; set; } = string.Empty;
-	public ShohinModel Shohin { get; set; } = new();
+	private List<ShiiresakiModel> ShiiresakiList { get; set; } = new();
 
 
 	/// <summary>
 	/// 選択された商品情報を取得
 	/// </summary>
-	protected override void OnInitialized()
+	protected override async Task OnInitializedAsync()
 	{
 		EditModel = ShohinService.GetLastEditedShohin();
+		await LoadShiiresakiDataAsync();
+	}
+
+	private async Task LoadShiiresakiDataAsync()
+	{
+		try
+		{
+			if (ShiiresakiRepo != null)
+			{
+				ShiiresakiList = await ShiiresakiRepo.GetAllAsync();
+			}
+		}
+		catch(Exception ex)
+		{
+			ErrorMessage = $"仕入先データのロード中にエラーが発生しました: {ex.Message}";
+			ShiiresakiList = new List<ShiiresakiModel>();
+		}
 	}
 
 	/// <summary>
