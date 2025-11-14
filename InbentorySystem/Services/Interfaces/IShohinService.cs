@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using InbentorySystem.Data.Models;
-
+using InbentorySystem.Services.Interfaces;
 namespace InbentorySystem.Services.Interfaces
 {
     public interface IShohinService
@@ -52,6 +52,16 @@ namespace InbentorySystem.Services.Interfaces
         /// 修正対象の商品を取得する
         /// </summary>
         public ShohinModel? GetLastEditedShohin();
+
+        /// <summary>
+        /// 検索結果を取得する
+        /// </summary>
+        List<ShohinModel> GetSearchResults();
+
+        void SetLastUpdatedShohin(ShohinModel model);
+        ShohinModel? GetLastUpdatedShohin();
+        void ClearLastUpdatedShohin();
+
 
         // --- 削除関連 ---
 

@@ -5,12 +5,12 @@ config:
 ---
 sequenceDiagram
   participant U as ユーザー
-  participant MainF as HomeForm
+  participant MainF as MainForm
   participant ChildF as 各種メニューForm
   U ->> MainF: MainMenuForm.Load()
   MainF ->> MainF: InitializeMainForm()
   U ->> MainF: 各種メニューのボタンをクリック
-  MainF ->>+ ChildF: 各種メニューに遷移
-  U ->> ChildF: [ホームメニューに戻る]ボタンをクリック
+  MainF ->>+ ChildF: NavManager.NavigateTo()
+  U ->> ChildF: [メインメニューに戻る]ボタンをクリック
   ChildF ->>- MainF: GoBack()
 )

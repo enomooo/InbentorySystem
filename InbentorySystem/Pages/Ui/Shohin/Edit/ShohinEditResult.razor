@@ -1,0 +1,71 @@
+﻿@page "/shohin/edit/result"
+@using InbentorySystem.Data.Models
+@using InbentorySystem.Infrastructure.Interfaces
+@using InbentorySystem.Infrastructure.Models
+@using InbentorySystem.Services
+@using InbentorySystem.Services.Interfaces
+@inject IShohinService ShohinService
+@inject NavigationManager NavManager
+
+@{
+	@if (UpdatedShohin == null)
+	{
+		<div class="alert alert-warning">
+			修正された商品情報が見つかりません。<a href="/shohin/menu">商品管理メニューに戻る</a>
+		</div>
+	}
+	else
+	{
+		<h2>以下の商品を修正しました。</h2>
+		<table class="table table-bordered table-striped">
+			<thead>
+				<tr>
+					<th>商品コード</th>
+					<th>商品名（漢字）</th>
+					<th>商品名（かな）</th>
+					<th class="text-end">仕入値</th>
+					<th class="text-end">売値</th>
+					<th>仕入先コード</th>
+				</tr>
+			</thead>
+			<tbody>
+				
+					<tr>
+					<td>@UpdatedShohin.ShohinCode</td>
+					<td>@UpdatedShohin.ShohinMeiKanji</td>
+					<td>@UpdatedShohin.ShohinMeiKana</td>
+					<td class="text-end">@UpdatedShohin.Shiirene.ToString("N0")</td>
+					<td class="text-end">@UpdatedShohin.Urine.ToString("N0")</td>
+					<td>@UpdatedShohin.ShiiresakiCode</td>
+					</tr>
+				
+			</tbody>
+		</table>
+
+		<button class="btn btn-secondary mt-4" @onclick="GoBack">
+			商品管理メニューに戻る
+		</button>
+	}
+}
+
+@code {
+	private ShohinModel? UpdatedShohin;
+
+	/// <summary>
+	/// 修正された商品データを受け取る
+	/// </summary>
+	protected override void OnInitialized()
+	{
+		UpdatedShohin = ShohinService.GetLastUpdatedShohin();
+	}
+
+	/// <summary>
+	/// 商品管理メニュー画面に戻る処理
+	/// </summary>
+	private void GoBack()
+	{
+		ShohinService.ClearLastRegisteredShohin();
+		NavManager.NavigateTo("/shohin/menu");
+	}
+
+}

@@ -155,7 +155,7 @@
 </div>
 <hr class="mt-4" />
 
-<button class="btn btn-secondary" @onclick="GoBack">ホームメニューに戻る</button>
+<button class="btn btn-secondary w-100" @onclick="GoBack">ホームメニューに戻る</button>
 
 @code {
 	// 各機能ごとのキーワードを保持するフィールド
@@ -347,6 +347,12 @@
 	private async Task SearchForDelete(string keyword)
 	{
 		ErrorMessage = string.Empty;
+		if (string.IsNullOrWhiteSpace(keyword))
+		{
+			ErrorMessage = "検索条件を入力してください。";
+			return;
+		}
+
 		var results = string.IsNullOrWhiteSpace(keyword)
 			? await ShohinRepo.GetAllAsync()
 			: await ShohinRepo.SearchByKeywordAsync(keyword);
@@ -359,7 +365,8 @@
 		}
 		else
 		{
-			NavManager.NavigateTo("/shohin/delete/select");
+			var query = string.IsNullOrWhiteSpace(keyword) ? "all" : keyword;
+			NavManager.NavigateTo($"/shohin/delete/select?q={Uri.EscapeDataString(query)}");
 		}
 	}
 

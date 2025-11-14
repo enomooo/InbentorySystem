@@ -22,19 +22,15 @@ namespace InbentorySystem.Infrastructure.Repository
         {
             shiire.Tourokunichiji = DateTime.Now;
             const string sql = @"
-                -- 1. T_SHIIRE(仕入伝票)に新規レコードを挿入 
                 INSERT INTO T_SHIIRE (shiiresakinengappi, shohincode, shiiresakicode, quantity, shiirene, tourokunichiji) 
                 VALUES (@ShiireNengappi, @ShohinCode, @ShiiresakiCode, @Quantity, @Shiirene, @TourokuNichiji);
 
-                -- 2.T_ZAIKO(在庫)を更新
-                -- UPSERT (レコードが存在すれば更新、なければ挿入）を行う 
                 INSERT INTO T_ZAIKO(shohincode, currentquantity, tourokunichiji, kousinnichiji) 
                 VALUES (@ShohinCode, @Quantity, @TourokuNichiji, @TourokuNichiji) 
+
                 ON CONFLICT (shohincode) 
                 DO UPDATE SET currentquantity = T_ZAIKO.currentquantity + EXCLUDED.quantity,
-                -- 既存の値に数量を加算 
                 kousinnichiji = EXCLUDED.tourokunichiji;
-                -- 更新日時を最新に 
                 ";
 
             try
@@ -181,7 +177,7 @@ namespace InbentorySystem.Infrastructure.Repository
             const string updateZaikoSql = @"
                 UPDATE T_ZAIKO SET
                 currentquantity = currentquantity - @Quantity, 
-                -- 数量分を減算（払い戻し） 
+
                 kousinnichiji = NOW() 
                 WHERE
                 shohincode = @ShohinCode;";

@@ -36,6 +36,7 @@ namespace InbentorySystem.Services
         public void SetSearchResults(List<ShohinModel> results)
         {
             _searchResults = results;
+            _shohinList = results;
         }
 
         /// <summary>
@@ -83,6 +84,7 @@ namespace InbentorySystem.Services
         }
 
         public ShohinModel? LastEditedShohin => _lastEditedShohin;
+
         /// <summary>
         /// 修正対象の商品を取得する
         /// </summary>
@@ -91,6 +93,24 @@ namespace InbentorySystem.Services
         {
             return _lastEditedShohin;
         }
+
+        private ShohinModel? _lastUpdatedShohin;
+
+        public void SetLastUpdatedShohin(ShohinModel model)
+        {
+            _lastUpdatedShohin = model;
+        }
+
+        public ShohinModel? GetLastUpdatedShohin()
+        {
+            return _lastUpdatedShohin;
+        }
+
+        public void ClearLastUpdatedShohin()
+        {
+            _lastUpdatedShohin = null;
+        }
+
 
         /// <summary>
         /// 修正対象の商品データをrepository経由で更新するメソッド

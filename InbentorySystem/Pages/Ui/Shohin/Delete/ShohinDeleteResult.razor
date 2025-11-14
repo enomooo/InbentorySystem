@@ -1,0 +1,62 @@
+﻿@page "/shohin/delete/result"
+@using InbentorySystem.Data.Models
+@using InbentorySystem.Infrastructure.Interfaces
+@using InbentorySystem.Infrastructure.Models
+@using InbentorySystem.Services
+@using InbentorySystem.Services.Interfaces
+@inject IShohinService ShohinService
+@inject NavigationManager NavManager
+
+<PageTitle>商品削除完了</PageTitle>
+
+<div class="card p-4 shadow-sm">
+    <h1>商品削除完了</h1>
+    <hr />
+
+    @if (DeletedModel == null)
+    {
+        <div class="alert alert-warning">
+            削除対象の情報が見つかりませんでした。
+        </div>
+    }
+    else
+    {
+        <h3>以下の商品と関連データ（在庫など）の削除が完了しました。</h3>
+
+        <div class="p-3 mb-4 border rounded bg-light">
+            <p class="mb-1"><strong>商品コード：</strong> @DeletedModel.ShohinCode</p>
+            <p class="mb-1"><strong>商品名：</strong> @DeletedModel.ShohinMeiKanji</p>
+        </div>
+
+        <p class="text-success">
+            商品コード：**@DeletedModel.ShohinCode** を商品テーブルと在庫テーブルから削除しました。
+        </p>
+    }
+
+    <div class="mt-4">
+        <button class="btn btn-primary" @onclick="GoToMenu">
+            商品管理メニューに戻る
+        </button>
+    </div>
+</div>
+
+@code {
+    // 最後に削除された商品モデル
+    private ShohinModel? DeletedModel;
+
+    /// <summary>
+    /// ページ初期化時にサービスから削除された商品情報を取得
+    /// </summary>
+    protected override void OnInitialized()
+    {
+        DeletedModel = ShohinService.LastDeletedShohin; 
+    }
+
+    /// <summary>
+    /// 商品管理メニュー画面に戻る処理
+    /// </summary>
+    private void GoToMenu()
+    {
+        NavManager.NavigateTo("/shohin/menu");
+    }
+}

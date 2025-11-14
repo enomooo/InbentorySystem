@@ -72,7 +72,7 @@ namespace InbentorySystem.Infrastructure.Repository
             m_shohin M
         WHERE
             shohin_mei_kanji ILIKE @Keyword
-        OR                                  -- ORの前後にもスペースが必要
+        OR                                 
             shohin_mei_kana ILIKE @Keyword;
         "; 
             var param = new { Keyword = $"%{keyword}%" };

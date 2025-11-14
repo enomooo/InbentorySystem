@@ -2,8 +2,12 @@
 @using InbentorySystem.Data
 @using InbentorySystem.Data.Models
 @using InbentorySystem.Infrastructure.Interfaces
+@using InbentorySystem.Services
+@using InbentorySystem.Services.Interfaces
 @inject IShohinRepository ShohinRepo
 @inject NavigationManager NavManager
+@inject IShohinService ShohinService
+
 
 <PageTitle>商品削除対象選択</PageTitle>
 
@@ -51,7 +55,7 @@ else
 					<td class="text-end">@shohin.Urine.ToString("N0")</td>
 					<td>@shohin.ShiiresakiCode</td>
 					<td>
-						<button class="btn btn-danger btn-sm" @onclick="@(() => NavigateToDelete(shohin.ShohinCode))">
+						<button class="btn btn-danger btn-sm" @onclick="@(() => DeleteShohinAsync(shohin))">
 							削除
 						</button>
 					</td>
@@ -59,22 +63,27 @@ else
 			}
 		</tbody>
 	</table>
+
+	<button class="btn btn-secondary w-100 mb-3" @onclick="GoBack">
+		<span class="pointer-event oi-arrow-left"></span>商品管理メニューへ戻る
+	</button>
 }
+@* ★修正1: @elseブロックの閉じ括弧を追加★ *@
+
 
 @code {
 	[Parameter]
 	[SupplyParameterFromQuery]
-
-	// 検索キーワード
 	public string q { get; set; } = string.Empty;
+
 	private List<ShohinModel> ShohinList { get; set; } = new();
+
 	private bool IsLoading = true;
-	private string ErrorMessage = string.Empty;
+	private string ErrorMessage = string.Empty; // ★修正2: 変数名を ErrorMessage に修正★
 
 	/// <summary>
 	/// ページ読み込み時に検索条件に応じた商品データ取得
 	/// </summary>
-	/// <returns></returns>
 	protected override async Task OnInitializedAsync()
 	{
 		await LoadDataAsync();
@@ -83,7 +92,6 @@ else
 	/// <summary>
 	/// 検索条件に応じてデータを取得
 	/// </summary>
-	/// <returns></returns>
 	private async Task LoadDataAsync()
 	{
 		IsLoading = true;
@@ -98,6 +106,7 @@ else
 
 		try
 		{
+			// ★修正3: LoadDataAsync の中身を正しいデータ取得ロジックに戻す★
 			if (q.ToLower() == "all")
 			{
 				ShohinList = await ShohinRepo.GetAllAsync();
@@ -120,16 +129,36 @@ else
 	}
 
 	/// <summary>
-	/// 指定された商品コードの削除確認画面へ遷移
+	/// 商品管理メニュー画面に戻る処理
 	/// </summary>
-	/// <param name="shohinCode"></param>
-	private void NavigateToDelete(string shohinCode)
-	{
-		NavManager.NavigateTo($"/shohin/delete/{shohinCode}");
-	}
-
 	private void GoBack()
 	{
 		NavManager.NavigateTo("/shohin/menu");
+	}
+
+	/// <summary>
+	/// 削除処理の実行と結果画面への遷移
+	/// </summary>
+	/// <param name="target">削除対象の商品モデル</param>
+	private async Task DeleteShohinAsync(ShohinModel target) // ★修正5: 重複したメソッド定義を正しい一つに統合★
+	{
+		ErrorMessage = string.Empty;
+
+		try
+		{
+			// 1. DBから商品を削除
+			await ShohinRepo.DeleteAsync(target.ShohinCode);
+
+			// 2. 削除した商品情報をサービスに保存（結果画面で利用）
+			ShohinService.SetLastDeletedShohin(target);
+
+			// 3. 削除結果画面へ遷移
+			NavManager.NavigateTo("/shohin/delete/result");
+		}
+		catch (Exception ex)
+		{
+			// エラーが発生した場合、メッセージを表示し、現在の画面に留まる
+			ErrorMessage = $"削除中にエラーが発生しました：{ex.Message}";
+		}
 	}
 }

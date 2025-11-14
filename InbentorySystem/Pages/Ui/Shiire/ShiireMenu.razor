@@ -1,9 +1,16 @@
-﻿@page "/shiire/index"
-@using InbentorySystem.Data
+﻿@page "/shohin/menu"
 @using InbentorySystem.Data.Models
+@using InbentorySystem.Infrastructure
 @using InbentorySystem.Infrastructure.Interfaces
+@using InbentorySystem.Infrastructure.Models
 @using InbentorySystem.Services
 @using InbentorySystem.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
+@inject IShiireRepository ShohinRepo
+@inject NavigationManager NavManager
+@inject IShiiresakiRepository ShiiresakiRepo
+
+
 
 <PageTitle>仕入管理メニュー</PageTitle>
 
@@ -20,16 +27,10 @@
 	<h2>仕入検索</h2>
 	<div class="row mb-3">
 
-		@* 仕入年月日 From *@
+		@* 仕入年月*@
 		<div class="col-md-3">
 			<label for="dateFromSearch" class="form-label">仕入年月日 From</label>
 			<input type="string" class="form-control" id="dateFromSearch" @bind="DateFrom" />
-		</div>
-
-		@* 仕入年月日 To *@
-		<div class="col-md-3">
-			<label for="dateToSearch" class="form-label">仕入年月日 To</label>
-			<input type="string" class="form-control" id="dateToSearch" @bind="DateTo" />
 		</div>
 
 		@* 商品コード *@
@@ -143,6 +144,8 @@
 		<button type="button" class="btn btn-secondary" @onclick="ResetSearchForm">リセット</button>
 	</div>
 </div>
+
+<button class="btn btn-secondary w-100" @onclick="GoBack">ホームメニューに戻る</button>
 
 @code {
 	// 依存性注入
@@ -266,6 +269,15 @@
 
 	private void NavigateToRegister()
 	{
-		NavigationManager.NavigateTo("/shiire/register");
+		NavManager.NavigateTo("/shiire/register");
 	}
+
+	/// <summary>
+	/// Homeメニュー画面に戻る処理
+	/// </summary>
+	private void GoBack()
+	{
+		NavManager.NavigateTo("/");
+	}
+}
 }

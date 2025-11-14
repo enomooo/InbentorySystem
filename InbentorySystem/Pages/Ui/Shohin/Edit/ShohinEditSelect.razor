@@ -46,6 +46,9 @@ else
 			}
 		</tbody>
 	</table>
+	<button class="btn btn-secondary w-100 mb-3" @onclick="GoBack">
+		<span class="pointer-event oi-arrow-left"></span>商品管理メニューへ戻る
+	</button>
 }
 
 @code {
@@ -61,5 +64,14 @@ else
 	{
 		ShohinService.SetLastEditedShohin(model);
 		NavManager.NavigateTo("/shohin/edit/form");
+	}
+
+	/// <summary>
+	/// 商品管理メニュー画面に戻る処理
+	/// </summary>
+	private void GoBack()
+	{
+		ShohinService.ClearLastRegisteredShohin();
+		NavManager.NavigateTo("/shohin/menu");
 	}
 }
