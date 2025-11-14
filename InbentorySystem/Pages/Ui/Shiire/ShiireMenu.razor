@@ -29,8 +29,8 @@
 
 		@* 仕入年月*@
 		<div class="col-md-3">
-			<label for="dateFromSearch" class="form-label">仕入年月日 From</label>
-			<input type="string" class="form-control" id="dateFromSearch" @bind="DateFrom" />
+			<label for="dateFromSearch" class="form-label">仕入年月 (YYYY-MM)</label>
+			<input type="text" class="form-control" id="dateFromSearch" @bind="DateFrom" placeholder="例:2025/11 "/>
 		</div>
 
 		@* 商品コード *@
@@ -148,18 +148,15 @@
 <button class="btn btn-secondary w-100" @onclick="GoBack">ホームメニューに戻る</button>
 
 @code {
-	// 依存性注入
-	[Inject]
-	public IShiireRepository ShiireRepository { get; set; } = default!;
-	[Inject]
-	public IShiireService ShiireService { get; set; } = default!;
-	[Inject]
-	public NavigationManager NavigationManager { get; set; } = default!;
+	// フィールド
+	private string SearchYearMonth = string.Empty;
+	private string SearchShohinCode = string.Empty;
+	private string SearchShiiresakiCode = string.Empty;
 
-	// 検索条件を保持するプロパティ
-	private string? DateFrom { get; set; }
-	private string? DateTo { get; set; }
-	private string? CodeKeyword { get; set; }
+	private string EditYearMonth = string.Empty;
+	private string EditShohinCode = string.Empty;
+
+	private string DeleteYearMonth = string.Empty;
 
 	// UI表示用
 	private string? Message { get; set; }
