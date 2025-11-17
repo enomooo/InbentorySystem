@@ -7,7 +7,7 @@
 @inject NavigationManager NavManager
 
 <PageTitle>商品検索結果</PageTitle>
-<h1>商品検索結果一覧</h1>
+<h1>商品検索結果</h1>
 
 @if (IsLoading)
 {
@@ -23,7 +23,6 @@ else if (ShohinList == null || !ShohinList.Any())
 }
 else
 {
-	<p>検索結果: **@ShohinList.Count 件**</p>
 	<table class="table table-striped table-bordered">
 		<thead class="thead-dark">
 			<tr>

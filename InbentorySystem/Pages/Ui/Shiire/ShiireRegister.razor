@@ -14,36 +14,39 @@
     var s = ShiireService.LastRegisteredShiire;
 
     <div class="card p-4 shadow-sm mb-4">
+        <p class="h4 text-success"> 以下の仕入を登録しました。</p>
         <h2>登録された仕入情報</h2>
         <table class="table table-bordered">
             <thead>
                 <tr>
+                    <th>仕入番号</th>
                     <th>仕入日付</th>
                     <th>商品コード</th>
                     <th>仕入先コード</th>
                     <th>数量</th>
-                    <th>仕入値</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
+                    <td>@s.ShiireNo</td>
                     <td>@s.ShiireNengappi.ToString("yyyy/MM/dd")</td>
                     <td>@s.ShohinCode</td>
                     <td>@s.ShiiresakiCode</td>
                     <td>@s.Quantity</td>
-                    <td>@s.Shiirene</td>
                 </tr>
             </tbody>
         </table>
     </div>
 
     <div class="card p-4 shadow-sm mb-4">
-        <h2>在庫加算結果</h2>
+        <p class="h4 text-success"> 以下の在庫を登録しました。</p>
+
+        <h2>登録された在庫情報</h2>
         <table class="table table-bordered">
             <thead>
                 <tr>
                     <th>商品コード</th>
-                    <th>加算数量</th>
+                    <th>数量</th>
                 </tr>
             </thead>
             <tbody>
@@ -72,6 +75,6 @@ else
 @code {
     private void NavigateBack()
     {
-        NavigationManager.NavigateTo("/shiire/index");
+        NavigationManager.NavigateTo("/shiire/menu");
     }
 }

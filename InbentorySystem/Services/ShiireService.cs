@@ -10,34 +10,17 @@ namespace InbentorySystem.Services
     /// </summary>
     public class ShiireService : IShiireService
     {
-        /// <summary>
-        /// 検索結果の一時保存
-        /// </summary>
-        public List<ShiireModel> SearchResults { get; private set; } = new();
-
-        /// <summary>
-        /// 検索条件の仕入年月の保持
-        /// </summary>
-        public string? LastDateFrom { get; private set; }
-
-        /// <summary>
-        /// 検索条件の商品コードの保持
-        /// </summary>
+  
+        // 最後に検索した商品コードキーワード（検索条件の記録用）
         public string? LastCodeKeyword { get; private set; }
 
-        /// <summary>
-        /// 登録結果の保持
-        /// </summary>
+        // 最後に登録された仕入データ
         public ShiireModel? LastRegisteredShiire { get; private set; }
 
-        /// <summary>
-        /// 修正結果の保持
-        /// </summary>
+        // 最後に修正された仕入データ
         public ShiireModel? LastEditedShiire { get; private set; }
 
-        /// <summary>
-        /// 削除結果の保持
-        /// </summary>
+        // 最後に削除された仕入データ
         public ShiireModel? LastDeletedShiire { get; private set; }
 
         /// <summary>
@@ -45,65 +28,98 @@ namespace InbentorySystem.Services
         /// </summary>
         public string? DetermineNavigationUri(string dateFrom, string codeKeyword, List<ShiireModel> results, string actionType)
         {
-            SearchResults = results;
-            LastDateFrom = dateFrom;
+            _searchResults = results;
             LastCodeKeyword = codeKeyword;
 
             if (results == null || results.Count == 0)
             {
                 return null;
             }
-
             return "/shiirelist";
         }
 
+        private List<ShiireModel> _searchResults = new();
+
         /// <summary>
-        /// UIから検索結果をセット
+        /// 検索結果リストをセットする
         /// </summary>
+        /// <param name="list">検索結果リスト</param>
         public void SetShiireList(List<ShiireModel> list)
         {
-            SearchResults = list;
+            _searchResults = list;
         }
 
+        public List<ShiireModel> SearchResults => _searchResults;
+
         /// <summary>
-        /// 検索結果を取得
+        /// 現在保持している仕入れリストを返す
         /// </summary>
+        /// <returns>現在保持している仕入れリスト</returns>
         public List<ShiireModel> GetShiireList()
         {
-            return SearchResults;
+            return _searchResults;
         }
 
         /// <summary>
-        /// 登録結果を保持
+        /// 検索結果をセットする
         /// </summary>
+        /// <param name="results">検索結果</param>
+        public void SetSearchResults(List<ShiireModel> results)
+        {
+            _searchResults = results;
+        }
+
+        public List<ShiireModel> GetSearchResults()
+        {
+            return _searchResults;
+        }
+
         public void SetLastRegisteredShiire(ShiireModel model)
         {
             LastRegisteredShiire = model;
         }
 
-        /// <summary>
-        /// 修正結果を保持
-        /// </summary>
+        public ShiireModel? GetLastRegisteredShiire()
+        {
+            return LastRegisteredShiire;
+        }
+
         public void SetLastEditedShiire(ShiireModel model)
         {
             LastEditedShiire = model;
         }
 
-        /// <summary>
-        /// 削除結果を保持
-        /// </summary>
-        public void SetLastDeletedShiire(ShiireModel model)
+        public ShiireModel? GetLastEditedShiire()
+        {
+            return LastEditedShiire;
+        }
+
+        public void SetLastEditResult(ShiireModel model)
+        {
+            LastEditedShiire = model;
+        }
+
+        public ShiireModel? GetLastEditResult()
+        {
+            return LastEditedShiire;
+        }
+
+        public void SetLastDeleteResult(ShiireModel model)
         {
             LastDeletedShiire = model;
         }
 
-        /// <summary>
-        /// 全ての一時状態をクリア
-        /// </summary>
+        public ShiireModel? GetLastDeleteResult()
+        {
+            return LastDeletedShiire;
+        }
+
+        public void SetLastDeletedShiire(ShiireModel model) => LastDeletedShiire = model;
+        public ShiireModel? GetLastDeletedShiire() => LastDeletedShiire;
+
         public void Clear()
         {
-            SearchResults.Clear();
-            LastDateFrom = null;
+            _searchResults.Clear();
             LastCodeKeyword = null;
             LastRegisteredShiire = null;
             LastEditedShiire = null;

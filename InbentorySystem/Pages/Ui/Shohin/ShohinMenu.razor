@@ -111,7 +111,7 @@
 				<div class="d-flex gap-3 mt-4">
 					@* type="submit"でRegisterAsyncが呼ばれる*@
 					<button type="submit" class="btn btn-success">登録画面</button>
-					<button type="button" class="btn btn-secondary" @onclick="ResetNewForm">フォームリセット</button>
+					<button type="button" class="btn btn-secondary" @onclick="ResetNewForm">リセット</button>
 				</div>
 				@if (!string.IsNullOrEmpty(RegisterErrorMessage))
 				{
@@ -175,7 +175,6 @@
 	{
 		await LoadShiiresakiDataAsync();
 	}
-
 
 
 	/// <summary>

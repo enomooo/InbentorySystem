@@ -1,0 +1,73 @@
+﻿@page "/shiire/edit/select"
+@using InbentorySystem.Data.Models
+@using InbentorySystem.Services.Interfaces
+@inject IShiireService ShiireService
+@inject NavigationManager NavManager
+
+<PageTitle>修正選択画面</PageTitle>
+
+<h1 class="mb-4">修正選択画面</h1>
+
+@if (ShiireService.GetShiireList().Count == 0)
+{
+	<div class="alert alert-warning">
+		検索結果がありません。<a href="/shiire/menu">仕入管理メニューに戻る</a>
+	</div>
+}
+else
+{
+	<table class="table table-striped table-bordered">
+		<thead class="thead-dark">
+			<tr>
+				<th>仕入番号</th>
+				<th>仕入日付</th>
+				<th>商品コード</th>
+				<th>仕入先コード</th>
+				<th class="text-end">数量</th>
+				<th class="text-end">仕入値</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var shiire in ShiireService.GetShiireList())
+			{
+				<tr>
+					<td>@shiire.ShiireNo</td>
+					<td>@shiire.ShiireNengappi.ToString("yyyy/MM/dd")</td>
+					<td>@shiire.ShohinCode</td>
+					<td>@shiire.ShiiresakiCode</td>
+					<td class="text-end">@shiire.Quantity</td>
+					<td class="text-end">@shiire.Shiirene.ToString("N0")</td>
+					<td>
+						<button class="btn btn-sm btn-primary" @onclick="() => Edit(shiire)">修正</button>
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+	<button class="btn btn-secondary w-100 mb-3" @onclick="GoBack">
+		<span class="pointer-event oi-arrow-left"></span>仕入管理メニューへ戻る
+	</button>
+}
+
+@code{
+
+	/// <summary>
+	/// 選択された仕入データを保存する
+	/// </summary>
+	/// <param name="model"></param>
+	private void Edit(ShiireModel model)
+	{
+		ShiireService.SetLastEditedShiire(model);
+		NavManager.NavigateTo("/shiire/edit/form");
+	}
+
+	/// <summary>
+	/// 仕入管理メニュー画面に戻る処理
+	/// </summary>
+	private void GoBack()
+	{
+		ShiireService.Clear();
+		NavManager.NavigateTo("/shohin/menu");
+}
+}

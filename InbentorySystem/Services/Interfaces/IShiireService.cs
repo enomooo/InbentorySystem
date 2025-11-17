@@ -6,7 +6,6 @@ namespace InbentorySystem.Services.Interfaces
     public interface IShiireService
     {
         List<ShiireModel> SearchResults { get; }
-        string? LastDateFrom { get; }
         string? LastCodeKeyword { get; }
 
         ShiireModel? LastRegisteredShiire { get; }
@@ -17,9 +16,21 @@ namespace InbentorySystem.Services.Interfaces
         void SetShiireList(List<ShiireModel> list);
         List<ShiireModel> GetShiireList();
 
+        void SetSearchResults(List<ShiireModel> results);
+        List<ShiireModel> GetSearchResults();
+
         void SetLastRegisteredShiire(ShiireModel model);
+        ShiireModel? GetLastRegisteredShiire();
+
         void SetLastEditedShiire(ShiireModel model);
-        void SetLastDeletedShiire(ShiireModel model);
+        ShiireModel? GetLastEditedShiire();
+
+        void SetLastEditResult(ShiireModel model);
+        ShiireModel? GetLastEditResult();
+
+        void SetLastDeleteResult(ShiireModel model);
+        ShiireModel? GetLastDeleteResult();
+        public void SetLastDeletedShiire(ShiireModel model);
 
         void Clear();
     }

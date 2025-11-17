@@ -1,8 +1,9 @@
-﻿using InbentorySystem.Data.Models;
+﻿using InbentorySystem.Infrastructure.Models;
 using System.Data;
 using Dapper;
 using System.Linq;
 using InbentorySystem.Infrastructure.Interfaces;
+using InbentorySystem.Data.Models;
 
 namespace InbentorySystem.Infrastructure.Repository
 {
@@ -12,25 +13,113 @@ namespace InbentorySystem.Infrastructure.Repository
         private readonly IDbConnectionFactory _connectionFactory;
         private readonly ISqlExecutor _executor;
 
+        /// <summary>
+        /// 仕入リポジトリのインスタンス生成
+        /// </summary>
+        /// <param name="connectionFactory">DB接続生成するためのファクトリ</param>
+        /// <param name="executor">SQL実行のためのユーティリティ</param>
         public ShiireRepository(IDbConnectionFactory connectionFactory, ISqlExecutor executor)
         {
             _connectionFactory = connectionFactory;
             _executor = executor;
         }
 
+        /// <summary>
+        /// 月単位検索（年月＋商品コード＋仕入先コード）
+        /// </summary>
+        public async Task<List<ShiireModel>> SearchByMonthAsync(int year, int month, string? shohinCode)
+        {
+            var sql = @"
+                   SELECT 
+                        shiire_no AS ShiireNo,
+                        shiire_bi AS ShiireNengappi,
+                        shohin_code AS ShohinCode,
+                        siiresaki_code AS ShiiresakiCode,
+                        suryo AS Quantity
+                    FROM t_shiire
+                    WHERE EXTRACT(YEAR FROM shiire_bi) = @Year
+                    AND EXTRACT(MONTH FROM shiire_bi) = @Month";
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@Year", year);
+            parameters.Add("@Month", month);
+
+            if (!string.IsNullOrEmpty(shohinCode))
+            {
+                sql += " AND shohin_code LIKE @ShohinCode";
+                parameters.Add("@ShohinCode", $"%{shohinCode}%");
+            }
+
+            sql += " ORDER BY shiire_bi DESC, shohin_code ASC;";
+
+            try
+            {
+                using var connection = _connectionFactory.CreateConnection();
+                var result = await _executor.QueryAsync<ShiireModel>(connection, sql, parameters);
+                return result.ToList();
+            }
+
+            catch (Exception ex)
+            {
+                throw new ApplicationException("仕入伝票の月単位検索中にエラーが発生しました。", ex);
+            }
+        }
+
+        /// <summary>
+        /// 日付検索（年月日＋商品コード）
+        /// </summary>
+        /// <param name="date">入力された日付</param>
+        /// <param name="shohinCode">入力された商品コード</param>
+        /// <returns></returns>
+        /// <exception cref="ApplicationException"></exception>
+        public async Task<List<ShiireModel>> SearchByDateAsync(DateTime date, string shohinCode)
+        {
+            var sql = @" 
+                SELECT shiire_no,
+                        shiire_bi AS ShiireNengappi,
+                shohin_code AS ShohinCode,
+                siiresaki_code AS ShiiresakiCode,
+                suryo AS Quantity
+            FROM t_shiire
+            WHERE shiire_bi = @Date";
+            var parameters = new DynamicParameters();
+            parameters.Add("@Date", date.Date);
+
+
+            if (!string.IsNullOrEmpty(shohinCode))
+            {
+                sql += " AND shohincode LIKE @ShohinCode";
+                parameters.Add("@ShohinCode", $"%{shohinCode}%");
+            }
+
+            sql += " ORDER BY shiiresakinengappi DESC, shohincode ASC;";
+
+            try
+            {
+                using var connection = _connectionFactory.CreateConnection();
+                var result = await _executor.QueryAsync<ShiireModel>(connection, sql, parameters);
+                return result.ToList();
+            }
+
+            catch (Exception ex)
+            {
+                throw new ApplicationException("仕入伝票の月単位検索中にエラーが発生しました。", ex);
+            }
+        }
+
+
         public async Task<int> RegisterAsync(ShiireModel shiire)
         {
             shiire.Tourokunichiji = DateTime.Now;
             const string sql = @"
-                INSERT INTO T_SHIIRE (shiiresakinengappi, shohincode, shiiresakicode, quantity, shiirene, tourokunichiji) 
-                VALUES (@ShiireNengappi, @ShohinCode, @ShiiresakiCode, @Quantity, @Shiirene, @TourokuNichiji);
+                INSERT INTO t_shiire (shiire_bi, shohin_code, siiresaki_code, suryo)
+                VALUES (@ShiireNengappi, @ShohinCode, @ShiiresakiCode, @Quantity);
 
-                INSERT INTO T_ZAIKO(shohincode, currentquantity, tourokunichiji, kousinnichiji) 
-                VALUES (@ShohinCode, @Quantity, @TourokuNichiji, @TourokuNichiji) 
-
-                ON CONFLICT (shohincode) 
-                DO UPDATE SET currentquantity = T_ZAIKO.currentquantity + EXCLUDED.quantity,
-                kousinnichiji = EXCLUDED.tourokunichiji;
+            INSERT INTO t_zaiko (shohin_code, suryo, koushin_nichiji)
+            VALUES (@ShohinCode, @Quantity, @Tourokunichiji)
+            ON CONFLICT (shohin_code)
+            DO UPDATE SET suryo = t_zaiko.suryo + EXCLUDED.suryo,
+                  koushin_nichiji = EXCLUDED.koushin_nichiji;
                 ";
 
             try
