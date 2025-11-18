@@ -17,8 +17,9 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin.ShohinIndexPageTexts
             using var ctx = new TestContext();
             var cut = ctx.RenderComponent<ShohinMenu>();
             Assert.Contains("商品管理メニュー", cut.Markup);
-        }
 
+        }
+        
         [Fact] // UT-SM-02: 商品検索ボタンで遷移する
         public void ShihinIndex_ShouldNavigateToSearchResult()
         {
