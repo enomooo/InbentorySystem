@@ -1,4 +1,4 @@
-﻿@page "/shohin/delete/result"
+﻿@page "/shohin/delete/result/{ShohinCode}"
 @using InbentorySystem.Data.Models
 @using InbentorySystem.Infrastructure.Interfaces
 @using InbentorySystem.Infrastructure.Models
@@ -24,38 +24,27 @@
         <h3>以下の商品と関連データ（在庫など）の削除が完了しました。</h3>
 
         <div class="p-3 mb-4 border rounded bg-light">
-            <p class="mb-1"><strong>商品コード：</strong> @DeletedModel.ShohinCode</p>
-            <p class="mb-1"><strong>商品名：</strong> @DeletedModel.ShohinMeiKanji</p>
+            <p class="mb-1">商品コード:@ShohinCode　を商品テーブルと在庫テーブルから削除しました</p>
         </div>
-
-        <p class="text-success">
-            商品コード：**@DeletedModel.ShohinCode** を商品テーブルと在庫テーブルから削除しました。
-        </p>
     }
 
     <div class="mt-4">
-        <button class="btn btn-primary" @onclick="GoToMenu">
-            商品管理メニューに戻る
+        <button class="btn btn-secondary w-100 mb-3" @onclick="GoBack">
+            <span class="pointer-event oi-arrow-left"></span>商品管理メニューへ戻る
         </button>
     </div>
 </div>
 
 @code {
-    // 最後に削除された商品モデル
-    private ShohinModel? DeletedModel;
+    [Parameter]
+    public string ShohinCode { get; set; } = string.Empty;
 
-    /// <summary>
-    /// ページ初期化時にサービスから削除された商品情報を取得
-    /// </summary>
-    protected override void OnInitialized()
-    {
-        DeletedModel = ShohinService.LastDeletedShohin; 
-    }
+    public ShohinModel? DeletedModel => ShohinService.LastDeletedShohin;
 
     /// <summary>
     /// 商品管理メニュー画面に戻る処理
     /// </summary>
-    private void GoToMenu()
+    private void GoBack()
     {
         NavManager.NavigateTo("/shohin/menu");
     }

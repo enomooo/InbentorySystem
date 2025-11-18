@@ -49,7 +49,7 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin.ShohinDeletePageTests
         }
 
         [Fact] // UT-SDC-03: 削除ボタンで削除処理と遷移が実行される
-        public async Task ShohinDeleteConfirm_ShouldDeleteAndNavigate()
+        public async Task ShohinDeleteConfirm_ShouldDeleteAndNavigateToResult()
         {
             using var ctx = new TestContext();
             var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
@@ -68,7 +68,7 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin.ShohinDeletePageTests
 
             await Task.Delay(10);
 
-            Assert.Equal("/shohin/menu", nav.Uri);
+            Assert.Equal("/shohin/delete/result/A001", nav.Uri);
             mockRepo.Verify(r => r.DeleteAsync("A001"), Times.Once);
         }
 

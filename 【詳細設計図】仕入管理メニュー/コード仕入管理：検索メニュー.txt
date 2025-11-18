@@ -1,6 +1,13 @@
+---
+config:
+  theme: themeVariables
+  look: classic
+---
+
 sequenceDiagram
-    participant U as ユーザー(ブラウザ)
-    participant IndexComp as ShiireIndex.razor
+    actor User
+    participant IndexComp as ShiireMenu
+    participant Service as ShiireService
     participant Repo as ShiireRepository
     participant DB as DB(PostgreSQL)
 
@@ -9,45 +16,45 @@ sequenceDiagram
     %% --------------------
     %% 画面アクセスと初期表示
     %% --------------------
-    U->>IndexComp: 画面アクセス（URL: /shiire/index）
+    User->>IndexComp: 画面アクセス（URL: /shiire/menu）
     activate IndexComp
 
-    Note over IndexComp: フォーム初期化 (仕入年月、商品コード)
-
-    IndexComp-->>U: 画面表示
+    IndexComp-->>User: 初期表示
 
     %% --------------------
     %% 仕入検索処理
     %% --------------------
-    U->>IndexComp: 仕入れ年月を入力 (例: 2025/10)
-    U->>IndexComp: 商品コードを入力 (例: P001, または空)
-    U->>IndexComp: 仕入検索ボタン クリック
+    User->>IndexComp: 仕入れ年月を入力 (例: 2025/10)
+    User->>IndexComp: 商品コードを入力 (例: P001, または空)
+    User->>IndexComp: 仕入検索ボタン クリック
 
-    Note over IndexComp: 検索条件を検証・整形
+    IndexComp->>Service: SearchShiireAsync()
+    activate Service
 
-    IndexComp->>Repo: 検索実行（SearchAsync）
+    Service->>Repo: SearchByMonthAsync()
     activate Repo
-    
-    Note over Repo: SQL構築: 仕入れ年月 AND 商品コード
-    Repo->>DB: SELECT * FROM T_SHIIRE WHERE ShiireNengappi LIKE '[年月]%' AND ShohinCode = '[コード]'
+
+    Repo->>DB: SELECT * FROM T_SHIIRE WHERE shiire_bi LIKE '[年月]%' AND shohin_code = '[コード]'
     activate DB
     DB-->>Repo: 該当仕入データ（List<ShiireModel>）
     deactivate DB
-    Repo-->>IndexComp: 検索結果
+    Repo-->>Service: 検索結果
     deactivate Repo
 
-    alt 該当仕入伝票がある場合
-        Note over IndexComp: 検索結果を次画面に渡す準備
-        IndexComp->>U: **仕入一覧画面**へ遷移（URL: /shiire/list?q=...）
-        deactivate IndexComp
-    else 該当仕入伝票がない場合
-        IndexComp->>IndexComp: エラーメッセージを設定
-        IndexComp-->>U: "該当する仕入伝票はありませんでした"と**Index画面に表示**
+    Service-->>IndexComp: 検索結果
+    deactivate Service
+
+    %% --------------------
+    %% 異常系 (データなし) の処理と中断 (break)
+    %% --------------------
+    break 該当仕入伝票がない場合
+        IndexComp-->>User: "該当する仕入伝票はありませんでした"と**Menu画面に表示**
+        IndexComp->>IndexComp: 処理を中断 (return)
     end
 
     %% --------------------
-    %% リセット処理
+    %% 正常系 (データあり) の処理
     %% --------------------
-    U->>IndexComp: リセットボタン クリック
-    IndexComp->>IndexComp: フォームの入力値を初期化
-    IndexComp-->>U: 入力フィールドをクリアして表示を更新
+    IndexComp->>IndexComp: **仕入一覧画面**へ遷移（URL: /shiire/select）
+    IndexComp-->>User: 検索結果を表示（URL: /shiire/select）
+    deactivate IndexComp

@@ -1,75 +1,110 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using InbentorySystem.Data.Models;
-using InbentorySystem.Services.Interfaces;
+
 namespace InbentorySystem.Services.Interfaces
 {
+    /// <summary>
+    /// 商品検索・登録・修正・削除などの一時的な状態を保持するサービスのインターフェース
+    /// </summary>
     public interface IShohinService
     {
         // --- 検索関連 ---
+
+        /// <summary>
+        /// 商品一覧（全件取得結果）を返す
+        /// </summary>
         List<ShohinModel> GetShohinList();
 
         /// <summary>
-        /// 検索結果保持
+        /// 商品一覧（全件取得結果）を保持する
         /// </summary>
-        /// <param name="results">検索結果</param>
-        public void SetSearchResults(List<ShohinModel> results);
+        void SetShohinList(List<ShohinModel> list);
 
         /// <summary>
-        /// 状態とキーワードに基づく遷移先を動的に生成
+        /// 検索結果を保持する
         /// </summary>
-        /// <param name="keyword">検索keyword</param>
-        /// <returns>URI</returns>
-        public string GetNavigationUri(string keyword);
-
-        // --- 登録関連 ---
-
-        /// <summary>
-        /// 最後に登録された商品モデルを保持する
-        /// </summary>
-        public void SetLastRegisteredShohin(ShohinModel shohin);
-
-        /// <summary>
-        /// 最後に登録された商品モデルを取得する
-        /// </summary>
-        public ShohinModel? GetLastRegisteredShohin();
-
-        /// <summary>
-        /// 最後に登録された商品モデルのキャッシュをクリアする
-        /// </summary>
-        public void ClearLastRegisteredShohin();
-
-
-        // --- 修正関連 ---
-        ShohinModel? LastEditedShohin { get; }
-
-        /// <summary>
-        /// 修正対象保持
-        /// </summary>
-        public void SetLastEditedShohin(ShohinModel model);
-
-        /// <summary>
-        /// 修正対象の商品を取得する
-        /// </summary>
-        public ShohinModel? GetLastEditedShohin();
+        void SetSearchResults(List<ShohinModel> results);
 
         /// <summary>
         /// 検索結果を取得する
         /// </summary>
         List<ShohinModel> GetSearchResults();
 
+        /// <summary>
+        /// 状態とキーワードに基づく遷移先を生成
+        /// </summary>
+        string GetNavigationUri(string keyword);
+
+
+        // --- 登録関連 ---
+
+        /// <summary>
+        /// 最後に登録された商品を保持する
+        /// </summary>
+        void SetLastRegisteredShohin(ShohinModel shohin);
+
+        /// <summary>
+        /// 最後に登録された商品を取得する
+        /// </summary>
+        ShohinModel? GetLastRegisteredShohin();
+
+        /// <summary>
+        /// 登録済み商品キャッシュをクリアする
+        /// </summary>
+        void ClearLastRegisteredShohin();
+
+
+        // --- 修正関連 ---
+
+        /// <summary>
+        /// 修正対象を保持する
+        /// </summary>
+        void SetLastEditedShohin(ShohinModel model);
+
+        /// <summary>
+        /// 修正対象を取得する
+        /// </summary>
+        ShohinModel? GetLastEditedShohin();
+
+        /// <summary>
+        /// 修正対象プロパティ
+        /// </summary>
+        ShohinModel? LastEditedShohin { get; }
+
+
+        // --- 更新関連 ---
+
+        /// <summary>
+        /// 更新後の商品を保持する
+        /// </summary>
         void SetLastUpdatedShohin(ShohinModel model);
+
+        /// <summary>
+        /// 更新後の商品を取得する
+        /// </summary>
         ShohinModel? GetLastUpdatedShohin();
+
+        /// <summary>
+        /// 更新後の商品キャッシュをクリアする
+        /// </summary>
         void ClearLastUpdatedShohin();
 
 
         // --- 削除関連 ---
 
         /// <summary>
-        /// 削除対象の商品を保持する
+        /// 削除対象を保持する
         /// </summary>
-        public void SetLastDeletedShohin(ShohinModel model);
+        void SetLastDeletedShohin(ShohinModel model);
 
+        /// <summary>
+        /// 削除対象を取得する
+        /// </summary>
+        ShohinModel? GetLastDeletedShohin();
+
+        /// <summary>
+        /// 削除対象プロパティ
+        /// </summary>
         ShohinModel? LastDeletedShohin { get; }
     }
 }

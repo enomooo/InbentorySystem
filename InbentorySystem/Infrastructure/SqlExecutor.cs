@@ -3,6 +3,7 @@ using System.Data;
 using System.Threading.Tasks;
 using Dapper;
 using InbentorySystem.Infrastructure.Interfaces;
+using Npgsql;
 
 namespace InbentorySystem.Data
 {
@@ -29,6 +30,32 @@ namespace InbentorySystem.Data
         {
             using var connection = _connectionFactory.CreateConnection();
             return await connection.ExecuteAsync(sql, param, transaction);
+        }
+
+        private readonly string? _connectionString;
+        /// <summary>
+        /// 複数のSQL文をトランザクション処理で実行
+        /// </summary>
+        /// <param name="sql">複数のSQL文</param>
+        /// <param name="param">渡すパラメータ</param>
+        /// <returns></returns>
+        public async Task<int> ExecuteInTransactionAsync(string sql, object param)
+        {
+            await using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            await using var transaction = await connection.BeginTransactionAsync();
+            try
+            {
+                var affectedRows = await connection.ExecuteAsync(sql, param, transaction: transaction);
+                await transaction.CommitAsync();
+                return affectedRows;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         /// <summary>

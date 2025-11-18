@@ -107,7 +107,13 @@ namespace InbentorySystem.Infrastructure.Repository
             }
         }
 
-
+        /// <summary>
+        /// DBにトランザクションでT_SHIIREとT_ZAIKOに登録処理
+        /// </summary>
+        /// <param name="shiire">新規登録するmodel</param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="ApplicationException"></exception>
         public async Task<int> RegisterAsync(ShiireModel shiire)
         {
             shiire.Tourokunichiji = DateTime.Now;
@@ -124,8 +130,9 @@ namespace InbentorySystem.Infrastructure.Repository
 
             try
             {
-                return await _executor.ExecuteAsync(sql, shiire);
+                return await _executor.ExecuteInTransactionAsync(sql, shiire);
             }
+            // 23503はforeignキー制約違反
             catch (Npgsql.PostgresException ex) when (ex.SqlState == "23503")
             {
                 throw new InvalidOperationException("指定された商品コードまたは仕入先コードが存在していません", ex);
@@ -136,6 +143,14 @@ namespace InbentorySystem.Infrastructure.Repository
             }
         }
 
+        /// <summary>
+        /// DBにアクセスして検索処理
+        /// </summary>
+        /// <param name="dateFrom">何日～</param>
+        /// <param name="dateTo">何日まで</param>
+        /// <param name="shohinCode">商品コード</param>
+        /// <returns></returns>
+        /// <exception cref="ApplicationException"></exception>
         public async Task<List<ShiireModel>> SearchAsync(string dateFrom, string dateTo, string shohinCode)
         {
             // 常に真の条件を設け、WHERE句の動的構築を容易にする
@@ -174,6 +189,14 @@ namespace InbentorySystem.Infrastructure.Repository
                 throw new ApplicationException("仕入伝票の検索中にエラーが発生しました。", ex);
             }
         }
+
+        /// <summary>
+        /// 日付と商品コードから仕入検索（修正と削除）
+        /// </summary>
+        /// <param name="date">年月日</param>
+        /// <param name="code">商品コード</param>
+        /// <returns>該当したShiireModel</returns>
+        /// <exception cref="ApplicationException"></exception>
         public async Task<ShiireModel?> GetByDateAndCodeAsync(string date, string code)
         {
             const string sql = @"
@@ -198,7 +221,11 @@ namespace InbentorySystem.Infrastructure.Repository
             }
         }
 
-
+        /// <summary>
+        /// トランザクション処理でDB修正メソッド
+        /// </summary>
+        /// <param name="shiire">選択されたShiireModel</param>
+        /// <returns>修正結果</returns>
         public async Task<int> UpdateAsync(ShiireModel shiire)
         {
             const string getOldQuantitySql = @" 
@@ -261,6 +288,14 @@ namespace InbentorySystem.Infrastructure.Repository
                 }
             }
         }
+
+        /// <summary>
+        /// トランザクション削除メソッド
+        /// </summary>
+        /// <param name="date">入力された日付</param>
+        /// <param name="code">商品コード</param>
+        /// <param name="quantity">数量</param>
+        /// <returns>削除結果</returns>
         public async Task<int> DeleteAsync(string date, string code, int quantity)
         {
             const string updateZaikoSql = @"

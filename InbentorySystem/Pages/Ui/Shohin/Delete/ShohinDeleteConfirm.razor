@@ -1,4 +1,4 @@
-﻿@page "/shohin/delete/ShohinCode"
+﻿@page "/shohin/delete/confirm/{Shohincode}"
 @using InbentorySystem.Data
 @using InbentorySystem.Data.Models
 @using InbentorySystem.Infrastructure.Interfaces
@@ -27,25 +27,42 @@ else if (Model == null)
 }
 else
 {
-	<div class="alert alert-danger">
-		<strong>警告:</strong>以下の商品をデータベースから完全に削除します。この操作は元に戻せません。よろしいですか？
-	</div>
-
 	<div class="card p-4 mb-4">
-		<h2>削除対象の商品情報</h2>
-		<table class="table table-bordered">
+		<h2>削除画面</h2>
+		<table class="table table-bordered table-striped">
+			<thead>
+				<tr>
+					<th>商品コード</th>
+					<th>商品名（漢字）</th>
+					<th>商品名（かな）</th>
+					<th class="text-end">仕入値</th>
+					<th class="text-end">売値</th>
+					<th>仕入先コード</th>
+				</tr>
+			</thead>
 			<tbody>
-				<tr><th>商品コード</th><td>@Model.ShohinCode</td></tr>
-				<tr><th>商品名（漢字）</th><td>@Model.ShohinMeiKanji</td></tr>
-				<tr><th>商品名（かな）</th><td>@Model.ShohinMeiKana</td></tr>
-				<tr><th>仕入値</th><td>@Model.Shiirene.ToString("N0") 円</td></tr>
-				<tr><th>売値</th><td>@Model.Urine.ToString("N0") 円</td></tr>
-				<tr><th>仕入先コード</th><td>@Model.ShiiresakiCode</td></tr>
+
+				<tr>
+					<td>@Model.ShohinCode</td>
+					<td>@Model.ShohinMeiKanji</td>
+					<td>@Model.ShohinMeiKana</td>
+					<td class="text-end">@Model.Shiirene.ToString("N0")</td>
+					<td class="text-end">@Model.Urine.ToString("N0")</td>
+					<td>@Model.ShiiresakiCode</td>
+				</tr>
+
 			</tbody>
 		</table>
+	<div class="alert alert-danger">
+		<h2>削除ボタンを押すと元に戻りませんが</h2>
+			<h2>本当に削除しますがよろしいですか？</h2>
+			<h2>キャンセルは商品管理メニューに戻るを押してください</h2>
+	</div>
 
-		<button class="btn btn-danger btn-lg mt-3" @onclick="DeleteConfirmedAsync">
-			<span class="oi oi-trash"></span> 削除を実行する
+	
+
+		<button class="btn btn-danger mt-3" @onclick="DeleteConfirmedAsync">
+			<span class="oi oi-trash">削除</span> 
 		</button>
 
 		@if (!string.IsNullOrEmpty(DeleteErrorMessage))
@@ -53,6 +70,9 @@ else
 			<div class="alert alert-danger mt-3">@DeleteErrorMessage</div>
 		}
 	</div>
+	<button class="btn btn-secondary w-100 mb-3" @onclick="GoBack">
+		<span class="pointer-event oi-arrow-left"></span>商品管理メニューへ戻る
+	</button>
 }
 
 @code {
@@ -111,7 +131,7 @@ else
 	}
 
 	/// <summary>
-	/// 商品削除を実行ｓて成功すれば商品管理メニューへ遷移
+	/// 商品削除を実行して成功すれば商品管理メニューへ遷移
 	/// </summary>
 	private async Task DeleteConfirmedAsync()
 	{
@@ -123,8 +143,7 @@ else
 			// ShohinRepositoryのDeleteAsyncを呼び出してDBからデータを削除
 			await ShohinRepo.DeleteAsync(Model.ShohinCode);
 
-			// 削除成功後、商品管理メニューに戻る
-			NavManager.NavigateTo("/shohin/menu", forceLoad: true);
+			NavManager.NavigateTo($"/shohin/delete/result?code={Model.ShohinCode}",forceLoad: true);
 		}
 		catch (Exception ex)
 		{
@@ -137,6 +156,6 @@ else
 	/// </summary>
 	private void GoBack()
 	{
-		NavManager.NavigateTo("/shohin/index");
+		NavManager.NavigateTo("/shohin/menu");
 	}
 }

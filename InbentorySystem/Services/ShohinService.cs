@@ -30,6 +30,15 @@ namespace InbentorySystem.Services
         }
 
         /// <summary>
+        /// 商品一覧を外部からセットする
+        /// </summary>
+        /// <param name="list">商品一覧</param>
+        public void SetShohinList(List<ShohinModel> list)
+        {
+            _shohinList = list;
+        }
+
+        /// <summary>
         /// 検索結果の保持
         /// </summary>
         /// <param name="results">検索結果</param>
@@ -147,6 +156,15 @@ namespace InbentorySystem.Services
                 throw new InvalidOperationException("削除対象の商品が設定されていません");
 
             await repository.DeleteAsync(LastDeletedShohin.ShohinCode);
+        }
+
+        /// <summary>
+        /// 最後に削除された商品モデルを取得する
+        /// </summary>
+        /// <returns>削除された商品モデル</returns>
+        public ShohinModel? GetLastDeletedShohin()
+        {
+            return _lastDeletedShohin;
         }
 
         /// <summary>

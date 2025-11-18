@@ -1,8 +1,8 @@
 ﻿using Bunit;
+using Bunit.TestDoubles;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using InbentorySystem.Data.Models;
-using Bunit.TestDoubles;
 using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Services.Interfaces;
 using InbentorySystem.Pages.Ui.Shohin;
@@ -11,15 +11,15 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin.ShohinIndexPageTexts
 {
     public class ShohinMenuPageTests
     {
-        [Fact] // UT-SI-01: タイトルが表示される
-        public void ShohinIndex_ShohinRenderTitle()
+        [Fact] // UT-SM-01: タイトルが表示される
+        public void ShohinMenu_ShohinRenderTitle()
         {
             using var ctx = new TestContext();
             var cut = ctx.RenderComponent<ShohinMenu>();
             Assert.Contains("商品管理メニュー", cut.Markup);
         }
 
-        [Fact] // UT-SI-02: 商品検索ボタンで遷移する
+        [Fact] // UT-SM-02: 商品検索ボタンで遷移する
         public void ShihinIndex_ShouldNavigateToSearchResult()
         {
             using var ctx = new TestContext();
