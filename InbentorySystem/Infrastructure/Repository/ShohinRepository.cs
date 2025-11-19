@@ -1,12 +1,4 @@
-﻿using Dapper;
-using InbentorySystem.Infrastructure.Models;
-using InbentorySystem.Infrastructure.Interfaces;
-using Microsoft.AspNetCore.Connections;
-using Microsoft.Extensions.Configuration;
-using System.Data;
-using System.Net.WebSockets;
-using System.Security.Cryptography.X509Certificates;
-using System.Transactions;
+﻿using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Data.Models;
 
 namespace InbentorySystem.Infrastructure.Repository
@@ -74,7 +66,7 @@ namespace InbentorySystem.Infrastructure.Repository
             shohin_mei_kanji ILIKE @Keyword
         OR                                 
             shohin_mei_kana ILIKE @Keyword;
-        "; 
+        ";
             var param = new { Keyword = $"%{keyword}%" };
 
             using var connection = _factory.CreateConnection();

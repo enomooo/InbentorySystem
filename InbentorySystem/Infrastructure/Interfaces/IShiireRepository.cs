@@ -16,12 +16,11 @@ namespace InbentorySystem.Infrastructure.Interfaces
         Task<int> RegisterAsync(ShiireModel shiire);
 
         /// <summary>
-        /// 月単位検索（年月＋商品コード＋仕入先コード）
+        /// 月単位検索（年月＋商品コード）
         /// </summary>
         /// <param name="year">検索対象の年</param>
         /// <param name="month">検索対象の月</param>
         /// <param name="shohinCode">商品コード（部分一致可）</param>
-        /// <param name="shiiresakiCode">仕入先コード（部分一致可）</param>
         /// <returns>該当する仕入リスト</returns>
         Task<List<ShiireModel>> SearchByMonthAsync(int year, int month, string? shohinCode);
 

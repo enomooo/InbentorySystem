@@ -4,6 +4,7 @@ using InbentorySystem.Data.Models;
 using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Pages.Ui.Shohin.Delete;
 using InbentorySystem.Pages.Ui.Shohin.Edit;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
@@ -11,6 +12,7 @@ namespace InbentorySystem.Tests.Integration.Shohin.EditIntegrationTests
 {
     public class ShohinEditFormIntegrationTests
     {
+
         [Fact] // IT-SEF-01: 商品情報が表示される
         public void ShohinEditForm_ShouldRenderShohinDetails_WhenCodeIsValid()
         {

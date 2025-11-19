@@ -21,15 +21,11 @@ namespace InbentorySystem.Tests.Unit.Repositories
         public async Task RegisterAsync_ShohinInsertShohinAndZaiko_WhenValidModel()
         {
             // ARRANGE
-
-            // 登録対象の商品モデル
             var model = new ShohinModel { ShohinCode = "A001" };
 
-            // 接続とトランザクションのモックを用意
+            // 接続とトランザクションのモックの準備
             var mockConnection = new Mock<IDbConnection>();
             var mockTransaction = new Mock<IDbTransaction>();
-
-            // トランザクション処理が始まったら、モックを返す
             mockConnection.Setup(c => c.BeginTransaction()).Returns(mockTransaction.Object);
             mockConnection.Setup(c => c.Open());
 
@@ -37,21 +33,13 @@ namespace InbentorySystem.Tests.Unit.Repositories
             var mockFactory = new Mock<IDbConnectionFactory>();
             mockFactory.Setup(f => f.CreateConnection()).Returns(mockConnection.Object);
 
-            // ExcuteAsyncを2回呼び出すため、明示的に同じ設定を２回記述
             var mockExecutor = new Mock<ISqlExecutor>();
             mockExecutor.Setup(e => e.ExecuteAsync(
                 It.IsAny<string>(),
                 It.IsAny<object?>(),
-                It.IsAny<IDbTransaction?>()
+                It.Is<IDbTransaction?>(t => t == mockTransaction.Object)
                 )).ReturnsAsync(1);
 
-            mockExecutor.Setup(e => e.ExecuteAsync(
-                It.IsAny<string>(),
-                It.IsAny<object?>(),
-                It.IsAny<IDbTransaction?>()
-                )).ReturnsAsync(1);
-
-            // モック依存でShohinRepositoryを構築
             var repo = new ShohinRepository(mockFactory.Object, mockExecutor.Object);
 
             // ACT
@@ -60,8 +48,16 @@ namespace InbentorySystem.Tests.Unit.Repositories
             // ASSERT
             Assert.Equal(1, result);
 
-            // トランザクションがCommit()が呼ばれたかをVerifyで検証
             mockTransaction.Verify(t => t.Commit(), Times.Once);
+            mockTransaction.Verify(t => t.Rollback(), Times.Never);
+
+            mockExecutor.Verify(
+                e => e.ExecuteAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<object?>(),
+                    It.IsAny<IDbTransaction?>()),
+                Times.Exactly(2),
+                "M_SHOHINとT_ZAIKOの2つのINSERTが実行されるべきです。");
         }
 
         [Fact] // UT-SR-08b: 登録時に例外が発生した場合はrollbackされる
@@ -81,7 +77,6 @@ namespace InbentorySystem.Tests.Unit.Repositories
             var mockFactory = new Mock<IDbConnectionFactory>();
             mockFactory.Setup(f => f.CreateConnection()).Returns(mockConnection.Object);
 
-            // 例外スロー
             var mockExecutor = new Mock<ISqlExecutor>();
             mockExecutor.Setup(e => e.ExecuteAsync(
                 It.IsAny<string>(),
@@ -96,20 +91,14 @@ namespace InbentorySystem.Tests.Unit.Repositories
 
             // ASSERT
             mockTransaction.Verify(t =>t.Rollback(), Times.Once);
+            mockTransaction.Verify(t => t.Commit(), Times.Never);
         }
 
         [Fact] // UT-SR-09: 商品修正のテスト（正常系）
         public async Task UpdateAsync_ShouldUpdateShohinAndZaiko_WhenValidModel()
         {
-            var model = new ShohinModel
-            {
-                ShohinCode = "A001",
-                ShohinMeiKanji = "修正商品",
-                ShohinMeiKana = "しゅうせいしょうひん",
-                Shiirene = 100,
-                Urine = 150,
-                ShiiresakiCode = "S001"
-            };
+            var model = new ShohinModel{ShohinCode = "A001",ShohinMeiKanji = "修正商品"};
+            int expectedRows = 1;
 
             var mockConnection = new Mock<IDbConnection>();
             var mockTransaction = new Mock<IDbTransaction>();
@@ -124,8 +113,8 @@ namespace InbentorySystem.Tests.Unit.Repositories
             mockExecutor.Setup(e => e.ExecuteAsync(
                 It.IsAny<string>(),
                 It.IsAny<object?>(),
-                It.IsAny<IDbTransaction?>()
-                )).ReturnsAsync(1);
+                It.Is<IDbTransaction?>(t => t == mockTransaction.Object)
+                )).ReturnsAsync(expectedRows);
 
             var repo = new ShohinRepository(mockFactory.Object, mockExecutor.Object);
 
@@ -133,22 +122,22 @@ namespace InbentorySystem.Tests.Unit.Repositories
             var result = await repo.UpdateAsync(model);
 
             // ASSERT
-            Assert.Equal(1, result);
+            Assert.Equal(expectedRows, result);
             mockTransaction.Verify(t => t.Commit(), Times.Once);
+
+            mockExecutor.Verify(
+                e => e.ExecuteAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<object?>(),
+                    It.IsAny<IDbTransaction?>()),
+                Times.Exactly(2),
+                "M_SHOHINとT_ZAIKOの2つのUPDATEが実行されるべきです。");
         }
 
         [Fact] // UT-SR-09b: 修正処理の時にExecuteAsyncが実行数0をを返した場合
         public async Task UpdateAsync_ShouldReturnZero_WhenNoRowsAffected()
         {
-            var model = new ShohinModel
-            {
-                ShohinCode = "A001",
-                ShohinMeiKanji = "修正商品",
-                ShohinMeiKana = "しゅうせいしょうひん",
-                Shiirene = 100,
-                Urine = 150,
-                ShiiresakiCode = "S001"
-            };
+            var model = new ShohinModel { ShohinCode = "Z000" };
 
             var mockConnection = new Mock<IDbConnection>();
             var mockTransaction = new Mock<IDbTransaction>();
@@ -164,7 +153,6 @@ namespace InbentorySystem.Tests.Unit.Repositories
                 It.IsAny<string>(),
                 It.IsAny<object?>(),
                 It.IsAny<IDbTransaction?>()
-                // return => 0
                 )).ReturnsAsync(0);
 
             var repo = new ShohinRepository(mockFactory.Object, mockExecutor.Object);
@@ -175,6 +163,13 @@ namespace InbentorySystem.Tests.Unit.Repositories
             // ASSERT
             Assert.Equal(0, result);
             mockTransaction.Verify(t => t.Commit(), Times.Once);
+
+            mockExecutor.Verify(
+                e => e.ExecuteAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<object?>(),
+                    It.IsAny<IDbTransaction?>()),
+                Times.Exactly(2));
         }
     }
 }

@@ -1,9 +1,13 @@
 ﻿@page "/shiire/menu"
 @using InbentorySystem.Data.Models
 @using InbentorySystem.Infrastructure.Interfaces
+@using InbentorySystem.Infrastructure.Models
 @using InbentorySystem.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
 @inject IShiireRepository ShiireRepository
+@inject IShohinRepository ShohinRepo
 @inject IShiireService ShiireService
+@inject IShiiresakiRepository ShiiresakiRepo
 @inject NavigationManager NavManager
 
 <PageTitle>仕入管理メニュー</PageTitle>
@@ -19,14 +23,30 @@
 @* 仕入検索エリア*@
 <div class="card p-4 mb-4">
 	<h2>仕入検索</h2>
-	<div class="row mb-3">
-		<div class="col-md-3">
+	<div class="row">
+		<div class="col-12 md-3">
 			<label for="yearMonth" class="form-label">仕入年月 (YYYY-MM)</label>
-			<input id="yearMonth" type="month" class="form-control" @bind="SearchYearMonth" />
+			<input id="yearMonth" type="text" class="form-control" 
+										@bind="SearchYearMonthString" />
 		</div>
-		<div class="col-md-3">
+		<div class="col-12 md-3">
 			<label for="codeKeywordSearch" class="form-label">商品コード</label>
-			<input id="codeKeywordSearch" type="text" class="form-control" @bind="SearchShohinCode" placeholder="商品コードの一部を入力" />
+			<select id="codeKeywordSearch" class="form-select" @bind="SearchShohinCode">
+				@if (ShohinMasterList == null || !ShohinMasterList.Any())
+			{
+				<option value="">商品マスタ読み込み中...</option>
+			}
+			else
+			{
+				<option value="">全ての商品コード</option>
+				@foreach (var shohin in ShohinMasterList)
+				{
+					<option value="@shohin.ShohinCode">
+						@shohin.ShohinCode : @shohin.ShohinMeiKanji
+					</option>
+				}
+			}
+			</select>
 		</div>
 	</div>
 	<div class="d-flex gap-2 mt-4">
@@ -44,23 +64,36 @@
 		<DataAnnotationsValidator />
 		<div class="card p-4">
 			<div class="row mb-3">
-				<label for="ShiireNengappi" class="col-sm-3 col-form-label">仕入日付</label>
+				<label for="ShiireNengappi" class="col-sm-3 col-form-label">仕入日付(YYYY-MM-DD)</label>
 				<div class="col-sm-5">
-					<InputDate id="ShiireNengappi" @bind-Value="NewShiireModel.ShiireNengappi" class="form-control" />
+					<input id="ShiireNengappi" type="text" class="form-control"
+										@bind="NewShiireModel.ShiireNengappi" 
+										@bind:event="oninput"/>
 					<ValidationMessage For="@(() => NewShiireModel.ShiireNengappi)" />
 				</div>
 			</div>
 			<div class="row mb-3">
 				<label for="ShohinCode" class="col-sm-3 col-form-label">商品コード</label>
 				<div class="col-sm-5">
-					<InputText id="ShohinCode" @bind-Value="NewShiireModel.ShohinCode" class="form-control" />
+					<InputSelect id="ShohinCode" @bind-Value="NewShiireModel.ShohinCode" class="form-control" >
+						<option value="">-- 選択してください --</option>
+					@foreach (var shohin in ShohinMasterList!)
+					{
+						<option value="@shohin.ShohinCode">@shohin.ShohinCode : @shohin.ShohinMeiKanji</option>
+					}
+					</InputSelect>
 					<ValidationMessage For="@(() => NewShiireModel.ShohinCode)" />
 				</div>
 			</div>
 			<div class="row mb-3">
 				<label for="ShiiresakiCode" class="col-sm-3 col-form-label">仕入先コード</label>
 				<div class="col-sm-5">
-					<InputText id="ShiiresakiCode" @bind-Value="NewShiireModel.ShiiresakiCode" class="form-control" />
+					<InputSelect id="ShiiresakiCode" @bind-Value="NewShiireModel.ShiiresakiCode" class="form-control">
+					@foreach (var shiiresaki in ShiiresakiMasterList)
+					{
+						<option value="@shiiresaki.ShiiresakiCode">@shiiresaki.ShiiresakiCode : @shiiresaki.ShiiresakiMeiKanji</option>
+					}
+					</InputSelect>
 					<ValidationMessage For="@(() => NewShiireModel.ShiiresakiCode)" />
 				</div>
 			</div>
@@ -109,7 +142,7 @@
 		</div>
 		<div class="d-flex gap-2">
 			<button type="button" class="btn btn-warning" @onclick='() => SearchForEdit(EditShiireDate, EditShohinCode)'>修正画面へ</button>
-			<button type="button" class="btn btn-secondary" @onclick="ResetSearchForm">リセット</button>
+			<button type="button" class="btn btn-secondary" @onclick="ResetEditForm">リセット</button>
 		</div>
 	</div>
 </div>
@@ -124,12 +157,12 @@
 			</div>
 			<div class="col-md-3">
 				<label for="deleteShohinCode" class="form-label">商品コード</label>
-				<input id="deleteShohinCode" type="text" class="form-control" @bind="DeleteShiireDate" />
+				<input id="deleteShohinCode" type="text" class="form-control" @bind="DeleteShohinCode" />
 			</div>
 		</div>
 		<div class="d-flex gap-2">
-			<button type="button" class="btn btn-warning" @onclick='() => SearchForDelete(DeleteShiireDate, DeleteShohinCode)'>修正画面へ</button>
-			<button type="button" class="btn btn-secondary" @onclick="ResetSearchForm">リセット</button>
+			<button type="button" class="btn btn-warning" @onclick='() => SearchForDelete(DeleteShiireDate, DeleteShohinCode)'>削除画面へ</button>
+			<button type="button" class="btn btn-secondary" @onclick="ResetDeleteForm">リセット</button>
 		</div>
 	</div>
 </div>
@@ -142,10 +175,12 @@
 	private bool IsError { get; set; }
 
 	// 検索用
-	private DateTime? SearchYearMonth { get; set; }
+	private string SearchYearMonthString { get; set; } = string.Empty;
 	private string SearchShohinCode { get; set; } = string.Empty;
+	private List<ShohinModel> ShohinMasterList { get; set; } = new();
 
 	// 登録用
+	private List<ShiiresakiModel> ShiiresakiMasterList { get; set; } = new();
 	private ShiireModel NewShiireModel { get; set; } = new();
 	private string? RegisterErrorMessage { get; set; }
 
@@ -156,6 +191,59 @@
 	// 修正用
 	private DateTime? DeleteShiireDate { get; set; }
 	private string DeleteShohinCode { get; set; } = string.Empty;
+
+	/// <summary>
+	/// 初期化表示の前に一回だけ呼び出される
+	/// </summary>
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadShohinMasterAsync();
+		await LoadShiiresakiMasterAsync();
+	}
+
+	/// <summary>
+	/// 商品マスターデータを取得する
+	/// </summary>
+	/// <returns>ヒットした全商品データ</returns>
+	private async Task LoadShohinMasterAsync()
+	{
+		try
+		{
+			if (ShohinRepo != null)
+			{
+				ShohinMasterList = await ShohinRepo.GetAllAsync();
+			}
+		}
+		catch(Exception ex)
+		{
+			Message = $"商品マスタのロード中にエラーが発生しました: {ex.Message}";
+			IsError = true;
+			ShohinMasterList = new List<ShohinModel>();
+			StateHasChanged();
+		}
+	}
+
+	/// <summary>
+	/// 仕入先マスターデータを取得する
+	/// </summary>
+	/// <returns></returns>
+	private async Task LoadShiiresakiMasterAsync()
+	{
+		try
+		{
+			if (ShiiresakiRepo != null)
+			{
+				ShiiresakiMasterList = await ShiiresakiRepo.GetAllAsync();
+			}
+		}
+		catch(Exception ex)
+		{
+			Message = $"仕入先マスタのロード中にエラーが発生しました: {ex.Message}";
+			IsError = true;
+			ShohinMasterList = new List<ShohinModel>();
+			StateHasChanged();
+		}
+	}
 
 	/// <summary>
 	/// 検索処理
@@ -169,22 +257,30 @@
 
 		try
 		{
-			if (SearchYearMonth == null || string.IsNullOrWhiteSpace(SearchShohinCode))
+			if (string.IsNullOrWhiteSpace(SearchYearMonthString))
 			{
-				Message = "入力項目が不足しています";
+				Message = "仕入年月を入力してください";
 				IsError = true;
+				StateHasChanged();
 				return;
 			}
 
-			var year = SearchYearMonth.Value.Year;
-			var month = SearchYearMonth.Value.Month;
+			if (!DateTime.TryParse(SearchYearMonthString + "-01", out var ym))
+			{
+				Message = "仕入年月形式が正しくありません (YYYY-MM形式で入力してください)";
+				IsError = true;
+				StateHasChanged();
+				return;
+			}
 
-			// 月単位検索（IShiireRepository 側の月検索メソッドを使用）
-			var results = await ShiireRepository.SearchByMonthAsync(year, month, SearchShohinCode);
+			// 月単位検索
+			var results = await ShiireRepository.SearchByMonthAsync(ym.Year, ym.Month, SearchShohinCode);
+
 
 			if (results == null || results.Count == 0)
 			{
 				Message = "該当する仕入はありませんでした";
+				StateHasChanged();
 				return;
 			}
 
@@ -202,7 +298,7 @@
 	/// </summary>
 	private void ResetSearchForm()
 	{
-		SearchYearMonth = null;
+		SearchYearMonthString = string.Empty;
 		SearchShohinCode = string.Empty;
 		Message = null;
 		IsError = false;
@@ -218,19 +314,19 @@
 
 		try
 		{
-			if (NewShiireModel.ShiireNengappi == default)
+			if (string.IsNullOrWhiteSpace(NewShiireModel.ShiireNengappi))
 			{
 				RegisterErrorMessage = "仕入日付を入力してください。";
 				return;
 			}
 			if (string.IsNullOrWhiteSpace(NewShiireModel.ShohinCode))
 			{
-				RegisterErrorMessage = "商品コードを入力してください。";
+				RegisterErrorMessage = "商品コードを選択してください。";
 				return;
 			}
 			if (string.IsNullOrWhiteSpace(NewShiireModel.ShiiresakiCode))
 			{
-				RegisterErrorMessage = "仕入先コードを入力してください。";
+				RegisterErrorMessage = "仕入先コードを選択してください。";
 				return;
 			}
 			if (NewShiireModel.Quantity <= 0)

@@ -131,6 +131,9 @@
 
 @code {
 
+	[Parameter]
+	public string ShohinCode { get; set; } = string.Empty;
+	public ShohinModel Shohin { get; set; } = new ShohinModel();
 	private ShohinModel? EditModel;
 	private string ErrorMessage = string.Empty;
 	private List<ShiiresakiModel> ShiiresakiList { get; set; } = new();

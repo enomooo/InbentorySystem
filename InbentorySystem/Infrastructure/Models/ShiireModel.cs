@@ -6,7 +6,7 @@
         /// <summary>
         /// 仕入年月日
         /// </summary>
-        public DateTime ShiireNengappi { get; set; }
+        public string? ShiireNengappi { get; set; }
 
         /// <summary>
         /// 商品コード

@@ -24,15 +24,15 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin
             var service = new ShohinService();
             service.SetLastEditedShohin(model);
 
-            // TestContext は bUnit が提供する Blazor テスト環境。
+            
             using var ctx = new TestContext();
             ctx.Services.AddSingleton(service);
 
-            // cutは描画されたコンポーネントのラッパーでコンポーネントをレンダリング
+            
             var cut = ctx.RenderComponent<ShohinEditSelect>();
 
             // d=shohinMeiKanji の input 要素を検索,value="牛刀"であることを検証
-            cut.Find("input[id=shohinMeiKanji]").MarkupMatches($"<input id=\" shohinMeiKanji\" value=\"牛刀\" />");
+            cut.Find("input[id=shohinMeiKanji]").MarkupMatches($"<input id=\"shohinMeiKanji\" value=\"牛刀\" />");
         }
 
         [Fact] // UT-SE-02: 商品名が編集できること
@@ -58,7 +58,7 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin
             var input = cut.Find("input[id=shohinMeiKanji]");
             input.Change("柳刃包丁");
 
-            var updatedValue = cut.Instance.Shohin.ShohinMeiKanji;
+            string updatedValue = cut.Instance.Shohin.ShohinMeiKanji;
 
             Assert.Equal("柳刃包丁", updatedValue);
         }
@@ -68,13 +68,21 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin
         {
             using var ctx = new TestContext();
             var service = new ShohinService();
+
+            // ARRANGE
             service.SetLastEditedShohin(new ShohinModel { ShohinMeiKanji = "牛刀" });
 
+            // ACT
             ctx.Services.AddSingleton(service);
             var cut = ctx.RenderComponent<ShohinEditSelect>();
 
+            var input = cut.Find("input[id=shohinMeiKanji]");
+            input.Change("");
+
+            // ACT
             cut.Find("form").Submit();
 
+            // ASSERT
             Assert.Contains("商品名は必須です", cut.Markup);
         }
     }

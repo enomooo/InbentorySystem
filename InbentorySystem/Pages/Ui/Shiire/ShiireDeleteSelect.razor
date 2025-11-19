@@ -32,7 +32,7 @@ else
             {
                 <tr>
                     <td>@s.ShiireNo</td>
-                    <td>@s.ShiireNengappi.ToString("yyyy/MM/dd")</td>
+                    <td>@s.ShiireNengappi</td>
                     <td>@s.ShohinCode</td>
                     <td>@s.ShiiresakiCode</td>
                     <td>@s.Quantity</td>
@@ -78,7 +78,7 @@ else
 
         var beforeQuantity = Target.Quantity;
         var result = await ShiireRepository.DeleteAsync(
-            Target.ShiireNengappi.ToString("yyyy-MM-dd"),
+            Target.ShiireNengappi!,
             Target.ShohinCode,
             Target.Quantity);
 

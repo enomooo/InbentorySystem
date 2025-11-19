@@ -1,18 +1,19 @@
-﻿using Xunit;
-using InbentorySystem.Services;
+﻿using InbentorySystem.Services;
 using InbentorySystem.Data.Models;
-using System.Collections.Generic;
-using System.Security.Cryptography.X509Certificates;
 using Moq;
-using System.ComponentModel;
-using System.Net.WebSockets;
 using InbentorySystem.Infrastructure.Interfaces;
+using System.Linq;
 
 namespace InbentorySystem.Tests.Unit.Services
 {
     public class ShohinServiceTests
     {
-        private readonly ShohinService _service = new ShohinService();
+        // サービスはテストごとに初期化されるようにする
+        private ShohinService _service;
+        public ShohinServiceTests()
+        {
+            _service = new ShohinService();
+        }
 
         [Fact] // UT-SH-01: キーワードなし ->全一覧へ
         public void GetNavigationUri_ShouldNavigateToAllList_WhenKeywordIsWhitespace()
@@ -22,7 +23,7 @@ namespace InbentorySystem.Tests.Unit.Services
             var results = new List<ShohinModel> { new ShohinModel() };
             _service.SetSearchResults(results);
 
-            string expectedUri = "/shohin/list";
+            string expectedUri = "/shohin/list?q=all";
 
             // ACT
             var actualUri = _service.GetNavigationUri(keyword);
@@ -37,6 +38,7 @@ namespace InbentorySystem.Tests.Unit.Services
             // ARRANGE
             string keyword = "存在しない";
             List<ShohinModel> results = new List<ShohinModel>();
+
             string expectedUri = string.Empty;
 
             // ACT
@@ -46,29 +48,14 @@ namespace InbentorySystem.Tests.Unit.Services
             Assert.Equal(expectedUri, actualUri);
         }
 
-        [Fact] // UT-SH-03: キーワードあり -> キーワードHIT一覧へ（1件の場合）
-        public void GetNavigationUri_ShouldNavigateToListWithQuery_WhenSingleResultFound()
+        [Theory] // UT-SH-03/04: キーワードあり -> キーワード付き一覧へ（１件　or　複数件の場合）
+        [InlineData("ペン", 1)] // 1件の場合
+        [InlineData("ペン", 2)] // 複数件の場合
+        [InlineData("特殊記号&?", 5)] //特殊文字を含む場合
+        public void GetNavigationUri_ShouldNavigateToListWithQuery_WhenResultFound(string keyword, int count)
         {
             // ARRANGE
-            string keyword = "ペン";
-            var results = new List<ShohinModel> { new ShohinModel() };
-            _service.SetSearchResults(results);
-
-            string expectedUri = $"/shohin/list?q={Uri.EscapeDataString(keyword)}";
-
-            // ACT
-            var actualUri = _service.GetNavigationUri(keyword);
-
-            // ASSERT
-            Assert.Equal(expectedUri, actualUri);
-        }
-
-        [Fact] // UT-SH-03/04: キーワードあり -> キーワード付き一覧へ（複数件の場合）
-        public void GetNavigationUri_ShouldNavigateToListWithQuery_WhenMultipleResultsFound()
-        {
-            // ARRANGE
-            string keyword = "ペン";
-            var results = new List<ShohinModel>() { new ShohinModel(), new ShohinModel() };
+            var results = Enumerable.Repeat(new ShohinModel(), count).ToList();
             _service.SetSearchResults(results);
 
             string expectedUri = $"/shohin/list?q={Uri.EscapeDataString(keyword)}";
@@ -83,56 +70,55 @@ namespace InbentorySystem.Tests.Unit.Services
         [Fact] // UT-SH-05: 修正対象の保持と取得
         public void SetLastEditedShohin_ShouldStoreAndReturnModel()
         {
-            var model = new ShohinModel { ShohinCode = "A001" };
+            // ARRANGE
+            var model = new ShohinModel { ShohinCode = "A001", ShohinMeiKanji = "編集済み" };
+
+            // ACT
             _service.SetLastEditedShohin(model);
 
+            // ASSERT
+            // GettersとPropertiesの両方を検証
             Assert.Equal(model, _service.GetLastEditedShohin());
             Assert.Equal(model, _service.LastEditedShohin);
+            Assert.Equal("編集済み", _service.LastEditedShohin!.ShohinMeiKanji);
         }
 
         [Fact] // UT-SH-06: 削除対象の保持と取得
         public void SetLastDeletedShohin_ShouldStoreAndReturnModel()
         {
             var model = new ShohinModel { ShohinCode = "A002" };
-            _service.SetLastDeletedshohin(model);
+            _service.SetLastDeletedShohin(model);
 
             Assert.Equal(model, _service.LastDeletedShohin);
         }
 
         [Fact] // UT-SH-07: 商品一覧の保持と取得
-        public void GetShohinList_ShouldReturnStoredList()
+        public void GetShohinList_ShouldReturnEmptyListInitially()
         {
-            List<ShohinModel> shohinModels = new()             {
-                new ShohinModel { ShohinCode = "A001" },
-                new ShohinModel { ShohinCode = "A002" }
-            };
-            var list = shohinModels;
-
-            // 内部フィールドに直接アクセスできないため、Setは省略（初期状態の確認）
+            // ARRANGE/ACT
             var result = _service.GetShohinList();
+
+            // ASSERT
             Assert.NotNull(result);
         }
 
         [Fact]// UT-SH-08: 修正対象が未設定の場合は例外が発生すること
-        public async Task ThrowsException_WhenLastEditedShohinIsNotSet()
+        public async Task UpdateShohinAsync_ThrowsException_WhenLastEditedShohinIsNotSet()
         {
             // Arrange
             var mockRepo = new Mock<IShohinRepository>();
-            var service = new ShohinService();
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            {
-                await service.UpdateShohinAsync(mockRepo.Object);
-            });
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _service.UpdateShohinAsync(mockRepo.Object)
+            );
         }
 
         [Fact]// UT-SH-09: UpdateShohinAsyncがリポジトリに正しく移譲される
-        public async Task DelegatesUpdateToRepository_WhenLastEditedShohinIsSet()
+        public async Task UpdateShohinAsync_DelegatesUpdateToRepository_WhenLastEditedShohinIsSet()
         {
             // Arrange
             var mockRepo = new Mock<IShohinRepository>();
-            var service = new ShohinService();
 
             var model = new ShohinModel
             {
@@ -144,10 +130,10 @@ namespace InbentorySystem.Tests.Unit.Services
                 ShiiresakiCode = "S003"
             };
 
-            service.SetLastEditedShohin(model);
+            _service.SetLastEditedShohin(model);
 
             // Act
-            await service.UpdateShohinAsync(mockRepo.Object);
+            await _service.UpdateShohinAsync(mockRepo.Object);
 
             // Assert
             mockRepo.Verify(r => r.UpdateAsync(It.Is<ShohinModel>(m =>
@@ -161,39 +147,34 @@ namespace InbentorySystem.Tests.Unit.Services
         }
 
         [Fact] // UT-SH-10: 削除対象が未設定の場合は例外が発生すること
-        public async Task ThrowException_WhenLastDeletedShohinIsNotSet()
-        {
-            // 削除対象が未設定
-            var mockRepo = new Mock<IShohinRepository>();
-            var service = new ShohinService();
-
-            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            {
-                await service.DeleteShohinAsync(mockRepo.Object);
-            });
-        }
-
-        [Fact]// UT-SH-11: DeleteShohinAsyncがリポジトリに正しく移譲される
-        public async Task DelegatesDeleteToRepository_WhenLastShohinIsSet()
+        public async Task DeleteShohinAsync_ThrowsException_WhenLastDeletedShohinIsNotSet()
         {
             // Arrange
             var mockRepo = new Mock<IShohinRepository>();
-            var service = new ShohinService();
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _service.DeleteShohinAsync(mockRepo.Object) 
+            );
+        }
+
+        [Fact]// UT-SH-11: DeleteShohinAsyncがリポジトリに正しく移譲される
+        public async Task DeleteShohinAsync_DelegatesDeleteToRepository_WhenLastDeletedShohinIsSet()
+        {
+            // Arrange
+            var mockRepo = new Mock<IShohinRepository>();
 
             var model = new ShohinModel
             {
                 ShohinCode = "A010",
                 ShohinMeiKanji = "柳刃包丁",
-                ShohinMeiKana = "やなぎばぼうちょう",
                 Shiirene = 1800,
-                Urine = 3600,
-                ShiiresakiCode = "S010"
             };
 
-            service.SetLastDeletedShohin(model);
+            _service.SetLastDeletedShohin(model);
 
             // Act
-            await service.DeleteShohinAsync(mockRepo.Object);
+            await _service.DeleteShohinAsync(mockRepo.Object);
 
             // Assert
             mockRepo.Verify(r => r.DeleteAsync("A010"), Times.Once);

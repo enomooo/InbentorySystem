@@ -28,7 +28,7 @@
 			<thead class="table-dark">
 				<tr>
 					<th>仕入番号</th>
-					<th>仕入年月日</th>
+					<th>仕入日</th>
 					<th>商品コード</th>
 					<th>仕入先コード</th>
 					<th>数量</th>
@@ -42,7 +42,7 @@
 						class="@(SelectedShiire == shiire ? "table-primary" : "")">
 
 						<td>@shiire.ShiireNo</td>
-						<td>@shiire.ShiireNengappi.ToString("yyyy-MM-dd")</td>
+						<td>@shiire.ShiireNengappi</td>
 						<td>@shiire.ShohinCode</td>
 						<td>@shiire.ShiiresakiCode</td>
 						<td>@shiire.Quantity</td>

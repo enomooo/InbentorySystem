@@ -65,23 +65,19 @@ else
 	private string ErrorMessage = string.Empty;
 
 	/// <summary>
-	/// URLの商品コードを元にデータを取得
+	/// 初回データロードの実行
 	/// </summary>
-	/// <returns></returns>
 	protected override async Task OnInitializedAsync()
 	{
 		await LoadDataAsync();
 	}
 
 	/// <summary>
-	/// URLの商品コードを元にデータを取得
+	/// 初回データロードの実行
 	/// </summary>
 	/// <returns></returns>
 	private async Task LoadDataAsync()
 	{
-		Console.WriteLine($"[DEBUG] q = {q}");
-		Console.WriteLine($"[DEBUG] ShohinRepo is null? {ShohinRepo == null}");
-
 		if (ShohinRepo == null)
 		{
 			ErrorMessage = "システムエラー：商品リポジトリが初期化されていません";
@@ -94,18 +90,13 @@ else
 
 		try
 		{
-			string keyword;
-			if (string.IsNullOrEmpty(q))
+			string keyword = q;
+			if (string.IsNullOrWhiteSpace(q))
 			{
 				keyword = "all";
 				Console.WriteLine("[DEBUG] Empty query treated as 'all'.");
 			}
 
-			else
-			{
-				// Blazorが自動でデコードする（Uri.UnescapeDataStringは不要）
-				keyword = q;
-			}
 			ShohinList = keyword.ToLower() == "all"
 					? await ShohinRepo.GetAllAsync()
 					: await ShohinRepo.SearchByKeywordAsync(keyword);

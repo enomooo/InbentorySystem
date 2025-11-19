@@ -33,7 +33,7 @@ namespace InbentorySystem.Tests.Unit.Repositories
             mockExecutor.Setup(e => e.ExecuteAsync(
                 It.IsAny<string>(),
                 It.IsAny<object?>(),
-                It.IsAny<IDbTransaction?>()
+                It.Is<IDbTransaction?>(t => t == mockTransaction.Object)
                 )).ReturnsAsync(1);
 
             var repo = new ShohinRepository(mockFactory.Object, mockExecutor.Object);
@@ -43,19 +43,26 @@ namespace InbentorySystem.Tests.Unit.Repositories
 
             // ASSERT
             mockTransaction.Verify(t => t.Commit(), Times.Once);
+            mockTransaction.Verify(t => t.Rollback(), Times.Never);
+
+            mockExecutor.Verify(
+                e => e.ExecuteAsync(
+                It.IsAny<string>(),
+                It.IsAny<object?>(),
+                It.IsAny<IDbTransaction?>()),
+                Times.Exactly(2),
+                "T_ZAIKOとM_SHOHINの２つのDELETEが実行されるべきです。");
         }
 
         [Fact] // UT-SR-10b: 削除時に例外が発生した場合はRollbackされること
         public async Task DeleteAsync_ShouldRollbackk_WhenExceptionOccurs()
         {
+            // ARRANGE
             var code = "A001";
 
             var mockConnection = new Mock<IDbConnection>();
             var mockTransaction = new Mock<IDbTransaction>();
-
             mockConnection.Setup(c => c.BeginTransaction()).Returns(mockTransaction.Object);
-            mockConnection.Setup(c => c.Open());
-
             var mockFactory = new Mock<IDbConnectionFactory>();
             mockFactory.Setup(f => f.CreateConnection()).Returns(mockConnection.Object);
 
@@ -64,36 +71,26 @@ namespace InbentorySystem.Tests.Unit.Repositories
                 It.IsAny<string>(),
                 It.IsAny<object?>(),
                 It.IsAny<IDbTransaction?>()))
-                // 例外発生
                 .ThrowsAsync(new Exception("削除失敗"));
 
             var repo = new ShohinRepository(mockFactory.Object, mockExecutor.Object);
 
-            // ACT
-            try
-            {
-                await repo.DeleteAsync(code);
-            }
-            catch (Exception)
-            {
-                // 例外は握りつぶす(Rollbackするかの検証にため)
-            }
+            // ACT & ASSERT(例外が再スローされることを検証し、処理を進める)
+            await Assert.ThrowsAsync<Exception>(() => repo.DeleteAsync(code));
 
-            // ASSERT(Rollback)
             mockTransaction.Verify(t => t.Rollback(), Times.Once);
+            mockTransaction.Verify(t => t.Commit(), Times.Never);  
         }
 
         [Fact] // UT-SR-10c: 削除対象が存在しない場合(ExcuteAsyncが0)
         public async Task DeleteAsync_ShouldReturnSilently_WhenNoRowsAffected()
         {
+            // ARRANGE
             var code = "zzzzz999";
 
             var mockConnection = new Mock<IDbConnection>();
             var mockTransaction = new Mock<IDbTransaction>();
-
             mockConnection.Setup(c => c.BeginTransaction()).Returns(mockTransaction.Object);
-            mockConnection.Setup(c => c.Open());
-
             var mockFactory = new Mock<IDbConnectionFactory>();
             mockFactory.Setup(f => f.CreateConnection()).Returns(mockConnection.Object);
 
@@ -109,46 +106,53 @@ namespace InbentorySystem.Tests.Unit.Repositories
             // ACT
             await repo.DeleteAsync(code);
 
-            // ASSERT(Commit)
+            // ASSERT
             mockTransaction.Verify(t => t.Commit(), Times.Once);
+            mockTransaction.Verify(t => t.Rollback(), Times.Never);
+
+            mockExecutor.Verify(
+            e => e.ExecuteAsync(It.IsAny<string>(), It.IsAny<object?>(), It.IsAny<IDbTransaction?>()),
+            Times.Exactly(2));
         }
 
-        public record ShohinCodeParam(string ShohinCode);
         [Fact]　// UT-SR-11: 商品削除のテスト（正常系）
-        public async Task GetByCodeAsyncで指定コードの商品が取得出来ること()
+        public async Task GetByCodeAsync_ShouldReturnShohin_WhenCodeExists()
         {
             // Arrange
+            var shohinCode = "A003";
+            var expectedModel = new ShohinModel
+            {
+                ShohinCode = shohinCode,
+                ShohinMeiKanji = "ペティナイフ",
+                ShohinMeiKana = "ぺてぃないふ",
+                Shiirene = 800,
+                Urine = 1600,
+                ShiiresakiCode = "S004"
+            
+            };
+
             var mockExecutor = new Mock<ISqlExecutor>();
             var mockFactory = new Mock<IDbConnectionFactory>();
             var mockConnection = new Mock<IDbConnection>();
 
-            mockConnection.Setup(c => c.Open());
             mockFactory.Setup(f => f.CreateConnection()).Returns(mockConnection.Object);
+
             mockExecutor.Setup(e => e.QueryFirstOrDefaultAsync<ShohinModel>(
-         // IDbConnection の検証を緩和 (IsAny)
-         It.IsAny<IDbConnection>(),
-         // SQL文字列は厳密にチェック
-         It.Is<string>(sql => sql.Contains("WHERE shohin_code = @ShohinCode")),
-         // パラメータオブジェクトの検証を緩和 (IsAny)
-         It.IsAny<object>()
-                 )).ReturnsAsync(new ShohinModel
-    {
-        ShohinCode = "A003",
-        ShohinMeiKanji = "ペティナイフ",
-        ShohinMeiKana = "ぺてぃないふ",
-        Shiirene = 800,
-        Urine = 1600,
-        ShiiresakiCode = "S004"
-    });
+                It.IsAny<IDbConnection>(),
+                It.Is<string>(sql => sql.Contains("WHERE shohin_code = @ShohinCode")),
+                It.Is<object>(p => p.GetType().GetProperty("ShohinCode")!.GetValue(p)!.ToString() == shohinCode),
+                null
+                )).ReturnsAsync(expectedModel);
 
             var repo = new ShohinRepository(mockFactory.Object, mockExecutor.Object);
 
             // Act
-            var result = await repo.GetByCodeAsync("A003");
+            var result = await repo.GetByCodeAsync(shohinCode);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal("ペティナイフ", result!.ShohinMeiKanji);
+            Assert.Equal(shohinCode, result!.ShohinCode);
+            Assert.Equal("ペティナイフ", result.ShohinMeiKanji);
         }
 
         [Fact]　// UT-SR-11b: 存在しない商品コードを指定した場合
@@ -159,10 +163,10 @@ namespace InbentorySystem.Tests.Unit.Repositories
             var mockFactory = new Mock<IDbConnectionFactory>();
             var mockConnection = new Mock<IDbConnection>();
 
-            mockConnection.Setup(c => c.Open());
             mockFactory.Setup(f => f.CreateConnection()).Returns(mockConnection.Object);
 
-            mockExecutor.Setup(e => e.QuerySingleOrDefaultAsync<ShohinModel>(
+            mockExecutor.Setup(e => e.QueryFirstOrDefaultAsync<ShohinModel>(
+                It.IsAny<IDbConnection>(),
                 It.IsAny<string>(),
                 It.IsAny<object>(),
                 null)).ReturnsAsync((ShohinModel?)null);

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 using Dapper;
@@ -20,6 +21,39 @@ namespace InbentorySystem.Data
         }
 
         /// <summary>
+        /// 複数のSQL文をトランザクション処理で実行
+        /// </summary>
+        /// <param name="sql">複数のSQL文</param>
+        /// <param name="param">渡すパラメータ</param>
+        /// <returns></returns>
+        public async Task<int> ExecuteInTransactionAsync(string sql, object param)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            var npgsqlConnection = connection as NpgsqlConnection;
+
+            if (npgsqlConnection == null)
+            {
+                throw new InvalidOperationException("ファクトリはNpgsqlConnectionを返していません。");
+            }
+
+            await npgsqlConnection.OpenAsync();
+
+            await using var transaction = await npgsqlConnection.BeginTransactionAsync();
+            try
+            {
+                var affectedRows = await connection.ExecuteAsync(sql, param, transaction: transaction);
+                await transaction.CommitAsync();
+                return affectedRows;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                System.Diagnostics.Debug.WriteLine($"DBエラー詳細: {ex.Message}");
+                throw new ApplicationException("トランザクション処理中にデータベースエラーが発生しました。", ex);
+            }
+        }
+
+        /// <summary>
         /// SQL文を実行し、影響を受けた行数を返す
         /// </summary>
         /// <param name="sql">string:実行するsql文</param>
@@ -31,33 +65,6 @@ namespace InbentorySystem.Data
             using var connection = _connectionFactory.CreateConnection();
             return await connection.ExecuteAsync(sql, param, transaction);
         }
-
-        private readonly string? _connectionString;
-        /// <summary>
-        /// 複数のSQL文をトランザクション処理で実行
-        /// </summary>
-        /// <param name="sql">複数のSQL文</param>
-        /// <param name="param">渡すパラメータ</param>
-        /// <returns></returns>
-        public async Task<int> ExecuteInTransactionAsync(string sql, object param)
-        {
-            await using var connection = new NpgsqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            await using var transaction = await connection.BeginTransactionAsync();
-            try
-            {
-                var affectedRows = await connection.ExecuteAsync(sql, param, transaction: transaction);
-                await transaction.CommitAsync();
-                return affectedRows;
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-        }
-
         /// <summary>
         /// SQL文を実行し、複数行の結果を IEnumerable<T> として返す。
         /// </summary>

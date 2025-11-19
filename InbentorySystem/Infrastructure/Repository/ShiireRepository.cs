@@ -25,8 +25,12 @@ namespace InbentorySystem.Infrastructure.Repository
         }
 
         /// <summary>
-        /// 月単位検索（年月＋商品コード＋仕入先コード）
+        /// 月単位検索（年月＋商品コード）
         /// </summary>
+        /// <param name="year">入力年</param>
+        /// <param name="month">入力月</param>
+        /// <param name="shohinCode">入力商品コード</param>
+        /// <returns>検索結果</returns>
         public async Task<List<ShiireModel>> SearchByMonthAsync(int year, int month, string? shohinCode)
         {
             var sql = @"
@@ -112,21 +116,22 @@ namespace InbentorySystem.Infrastructure.Repository
         /// </summary>
         /// <param name="shiire">新規登録するmodel</param>
         /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        /// <exception cref="ApplicationException"></exception>
         public async Task<int> RegisterAsync(ShiireModel shiire)
         {
             shiire.Tourokunichiji = DateTime.Now;
             const string sql = @"
-                INSERT INTO t_shiire (shiire_bi, shohin_code, siiresaki_code, suryo)
-                VALUES (@ShiireNengappi, @ShohinCode, @ShiiresakiCode, @Quantity);
+        INSERT INTO t_shiire (""shiire_bi"", ""shohin_code"", ""siiresaki_code"", ""suryo"")
+        VALUES (@ShiireNengappi, @ShohinCode, @ShiiresakiCode, @Suryo); 
 
-            INSERT INTO t_zaiko (shohin_code, suryo, koushin_nichiji)
-            VALUES (@ShohinCode, @Quantity, @Tourokunichiji)
-            ON CONFLICT (shohin_code)
-            DO UPDATE SET suryo = t_zaiko.suryo + EXCLUDED.suryo,
-                  koushin_nichiji = EXCLUDED.koushin_nichiji;
-                ";
+        INSERT INTO t_zaiko (""shohin_code"", ""suryo"", ""koushin_nichiji"")
+        VALUES (@ShohinCode, @Suryo, @Tourokunichiji)
+        ON CONFLICT (""shohin_code"")
+        DO UPDATE SET
+            -- ★ 最終修正案: ターゲット列を直接参照し、EXCLUDEDと加算する ★
+            ""suryo"" = t_zaiko.""suryo"" + EXCLUDED.""suryo"", 
+            ""koushin_nichiji"" = EXCLUDED.""koushin_nichiji"";
+        ";
+            
 
             try
             {

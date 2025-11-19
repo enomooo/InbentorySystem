@@ -12,23 +12,32 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin.ShohinSearchPageTests
     public class ShohinSearchPageTests
     {
         [Fact] // UT-SS-01: 検索結果が表示される
-        public void ShohinSearch_ShohinRenderShohinList()
+        public async Task ShohinSearch_ShohinRenderShohinList()
         {
             using var ctx = new TestContext();
+            var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
 
+            // ARRANGE
             var mockRepo = new Mock<IShohinRepository>();
             mockRepo.Setup(r => r.SearchByKeywordAsync("牛刀"))
                 .ReturnsAsync(new List<ShohinModel>
                 {
-                new ShohinModel { ShohinCode = "A001", ShohinMeiKanji = "牛刀", ShohinMeiKana = "ぎゅうとう", Shiirene = 1500, Urine = 2900, ShiiresakiCode = "S001" }
+                new ShohinModel { ShohinCode = "A001", ShohinMeiKanji = "牛刀", ShohinMeiKana = "ぎゅうとう", Shiirene = 1500, Urine = 3000, ShiiresakiCode = "S001" }
                 });
 
             ctx.Services.AddSingleton(mockRepo.Object);
 
-            var cut = ctx.RenderComponent<ShohinSearch>(parameters => parameters.Add(p => p.q, "牛刀"));
+            nav.NavigateTo("/shhohin/search?q=牛刀");
 
-            Assert.Contains("牛刀", cut.Markup);
-            Assert.Contains("3000", cut.Markup);
+            var cut = ctx.RenderComponent<ShohinSearch>();
+
+            cut.WaitForAssertion(() =>
+            {
+                Assert.Contains("牛刀", cut.Markup);
+                Assert.Contains("3000", cut.Markup);
+
+                mockRepo.Verify(r => r.SearchByKeywordAsync("牛刀"), Times.Once);
+            }, TimeSpan.FromSeconds(1));
         }
 
         [Fact] // UT-SS-02: 検索結果が0件なら警告表示
@@ -52,12 +61,18 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin.ShohinSearchPageTests
         {
             using var ctx = new TestContext();
 
+            var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
+
             var mockRepo = new Mock<IShohinRepository>();
             ctx.Services.AddSingleton(mockRepo.Object);
 
-            var cut = ctx.RenderComponent<ShohinSearch>(parameters => parameters.Add(p => p.q, ""));
+            nav.NavigateTo("/test?q=");
+
+            var cut = ctx.RenderComponent<ShohinSearch>();
 
             Assert.Contains("検索条件が不正です", cut.Markup);
+
+            mockRepo.Verify(r => r.SearchByKeywordAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact] // UT-SS-04: 読み込み中メッセージが表示される
