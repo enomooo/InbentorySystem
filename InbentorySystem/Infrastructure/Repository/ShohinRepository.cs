@@ -223,15 +223,13 @@ namespace InbentorySystem.Infrastructure.Repository
         // 削除処理
 
         /// <summary>
-        /// M_SHOHINとT_ZAIKOから指定された商品コードの商品データを削除する非同期メソッド(トランザクション必須)
+        /// M_SHOHINとT_ZAIKOとT_SHIIREから指定された商品コードの商品データを削除する非同期メソッド(トランザクション必須)
         /// </summary>
         /// <param name="shohin">削除するShohinModel</param>
         public async Task DeleteAsync(string shohinCode)
         {
-            // T_ZAIKOへのDELETE文(M_SHOHINは親レコードのため、T_ZAIKOが先)
+            var shiireSql = "DELETE FROM t_shiire WHERE shohin_code = @Code;";
             var zaikoSql = "DELETE FROM t_zaiko WHERE shohin_code = @Code;";
-
-            // M_SHOHINへのDELETE文
             var shohinSql = "DELETE FROM m_shohin WHERE shohin_code = @Code;";
 
             var param = new { Code = shohinCode };
@@ -243,6 +241,7 @@ namespace InbentorySystem.Infrastructure.Repository
                 {
                     try
                     {
+                        await _sqlExecutor.ExecuteAsync(shiireSql, param, transaction: transaction);
                         await _sqlExecutor.ExecuteAsync(zaikoSql, param, transaction: transaction);
                         await _sqlExecutor.ExecuteAsync(shohinSql, param, transaction: transaction);
                         transaction.Commit();

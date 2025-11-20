@@ -10,8 +10,6 @@ namespace InbentorySystem.Data.Models
     /// </summary>
     public class ShohinModel
     {
-        // todo:  DB側でintの桁数を制限出来なかったのでここで制限
-
         [Required(ErrorMessage = "商品コードは必須入力です")]
         /// <summary>
         /// 商品コード

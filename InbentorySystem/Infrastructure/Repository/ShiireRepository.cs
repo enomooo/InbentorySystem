@@ -1,7 +1,4 @@
-﻿using InbentorySystem.Infrastructure.Models;
-using System.Data;
-using Dapper;
-using System.Linq;
+﻿using Dapper;
 using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Data.Models;
 
@@ -33,6 +30,9 @@ namespace InbentorySystem.Infrastructure.Repository
         /// <returns>検索結果</returns>
         public async Task<List<ShiireModel>> SearchByMonthAsync(int year, int month, string? shohinCode)
         {
+            var startDate = new DateTime(year, month, 1);
+            var endDate = startDate.AddMonths(1);
+
             var sql = @"
                    SELECT 
                         shiire_no AS ShiireNo,
@@ -41,17 +41,17 @@ namespace InbentorySystem.Infrastructure.Repository
                         siiresaki_code AS ShiiresakiCode,
                         suryo AS Quantity
                     FROM t_shiire
-                    WHERE EXTRACT(YEAR FROM shiire_bi) = @Year
-                    AND EXTRACT(MONTH FROM shiire_bi) = @Month";
+                    WHERE shiire_bi >= @StartDate
+                    AND shiire_bi < @EndDate";
 
             var parameters = new DynamicParameters();
-            parameters.Add("@Year", year);
-            parameters.Add("@Month", month);
+            parameters.Add("@StartDate", startDate);
+            parameters.Add("@EndDate", endDate);
 
             if (!string.IsNullOrEmpty(shohinCode))
             {
-                sql += " AND shohin_code LIKE @ShohinCode";
-                parameters.Add("@ShohinCode", $"%{shohinCode}%");
+                sql += " AND shohin_code = @ShohinCode";
+                parameters.Add("@ShohinCode", shohinCode);
             }
 
             sql += " ORDER BY shiire_bi DESC, shohin_code ASC;";
@@ -92,11 +92,11 @@ namespace InbentorySystem.Infrastructure.Repository
 
             if (!string.IsNullOrEmpty(shohinCode))
             {
-                sql += " AND shohincode LIKE @ShohinCode";
+                sql += " AND shohin_code LIKE @ShohinCode";
                 parameters.Add("@ShohinCode", $"%{shohinCode}%");
             }
 
-            sql += " ORDER BY shiiresakinengappi DESC, shohincode ASC;";
+            sql += " ORDER BY Shiire_bi DESC, shohin_code ASC;";
 
             try
             {
@@ -119,23 +119,32 @@ namespace InbentorySystem.Infrastructure.Repository
         public async Task<int> RegisterAsync(ShiireModel shiire)
         {
             shiire.Tourokunichiji = DateTime.Now;
-            const string sql = @"
-        INSERT INTO t_shiire (""shiire_bi"", ""shohin_code"", ""siiresaki_code"", ""suryo"")
-        VALUES (@ShiireNengappi, @ShohinCode, @ShiiresakiCode, @Suryo); 
 
-        INSERT INTO t_zaiko (""shohin_code"", ""suryo"", ""koushin_nichiji"")
-        VALUES (@ShohinCode, @Suryo, @Tourokunichiji)
-        ON CONFLICT (""shohin_code"")
-        DO UPDATE SET
-            -- ★ 最終修正案: ターゲット列を直接参照し、EXCLUDEDと加算する ★
-            ""suryo"" = t_zaiko.""suryo"" + EXCLUDED.""suryo"", 
-            ""koushin_nichiji"" = EXCLUDED.""koushin_nichiji"";
-        ";
             
+            const string sql = @"
+        INSERT INTO t_shiire (shiire_bi, shohin_code, siiresaki_code, suryo)
+        VALUES (@ShiireNengappiParam, @ShohinCode, @ShiiresakiCode, @Quantity);
+
+        INSERT INTO t_zaiko (shohin_code, suryo, koushin_nichiji)
+        VALUES (@ShohinCode, @Quantity, @Tourokunichiji)
+        ON CONFLICT (shohin_code)
+        DO UPDATE SET
+            suryo = t_zaiko.suryo + EXCLUDED.suryo, 
+            koushin_nichiji = EXCLUDED.koushin_nichiji;
+        ";
+
+            var parameters = new
+            {
+                shiire.ShiireBi,
+                shiire.ShohinCode,
+                shiire.ShiiresakiCode,
+                shiire.Quantity,
+                shiire.Tourokunichiji
+            };
 
             try
             {
-                return await _executor.ExecuteInTransactionAsync(sql, shiire);
+                return await _executor.ExecuteInTransactionAsync(sql, parameters);
             }
             // 23503はforeignキー制約違反
             catch (Npgsql.PostgresException ex) when (ex.SqlState == "23503")
@@ -164,13 +173,13 @@ namespace InbentorySystem.Infrastructure.Repository
 
             if (!string.IsNullOrEmpty(dateFrom))
             {
-                sql += " AND shiiresakinengappi >= @DateFrom";
+                sql += " AND shiire_bi >= @DateFrom";
                 parameters.Add("@DateFrom", dateFrom);
             }
 
             if (!string.IsNullOrEmpty(dateTo))
             {
-                sql += " AND shiiresakinengappi <= @DateTo ";
+                sql += " AND shiire_bi <= @DateTo ";
                 parameters.Add("@DateTo", dateTo);
             }
 
@@ -179,7 +188,7 @@ namespace InbentorySystem.Infrastructure.Repository
                 sql += "AND shohincode LIKE @ShohinCode ";
                 parameters.Add("@ShohinCode", $"%{shohinCode}%");
             }
-            sql += " ORDER BY shiiresakinengappi DESC, shohincode ASC;";
+            sql += " ORDER BY shiire_bi DESC, shohincode ASC;";
 
             try
             {
@@ -207,7 +216,7 @@ namespace InbentorySystem.Infrastructure.Repository
             const string sql = @"
                 SELECT * FROM 
                 T_SHIIRE WHERE 
-                shiiresakinengappi = @ShiireNengappi 
+                shiire_bi = @ShiireNengappi 
                 AND
                 shohincode = @ShohinCode;";
 

@@ -4,9 +4,15 @@
     public class ShiireModel
     {
         /// <summary>
-        /// 仕入年月日
+        /// 仕入番号(自動採番)
         /// </summary>
-        public string? ShiireNengappi { get; set; }
+        public string ShiireNo { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 仕入年月日(画面のテキストボックスからのテキスト入力のためstring)
+        /// DB上はDate型
+        /// </summary>
+        public string? ShiireBi { get; set; }
 
         /// <summary>
         /// 商品コード
@@ -19,21 +25,16 @@
         public string ShiiresakiCode { get; set; } = string.Empty;
 
         /// <summary>
-        /// 数量
+        /// 数量（画面のテキストボックスの0表示を消すためint）
         /// </summary>
-        public int Quantity { get; set; }
+        public int? Quantity { get; set; }
 
         /// <summary>
         /// 仕入値
         /// </summary>
         public int Shiirene { get; set; }
 
-        // todo: 登録日はない（shiirebi,uriagebiで統一する）
+        // todo: T_SHIIREには存在しないため、DBの規約に従い削除を検討
         public DateTime Tourokunichiji { get; set; }
-
-        /// <summary>
-        /// 仕入番号
-        /// </summary>
-        public string ShiireNo { get; set; } = string.Empty;
     }
 }

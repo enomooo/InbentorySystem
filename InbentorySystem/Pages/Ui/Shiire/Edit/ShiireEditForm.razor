@@ -1,0 +1,198 @@
+﻿@page "/shiire/edit"
+@page "/shiire/edit/{DateString}/{Code}"
+@using InbentorySystem.Data.Models
+@using InbentorySystem.Infrastructure.Interfaces
+@using InbentorySystem.Infrastructure.Models
+@using InbentorySystem.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
+@inject IShiireRepository ShiireRepo
+@inject IShiiresakiRepository ShiiresakiRepo
+@inject NavigationManager NavManager
+
+<PageTitle>仕入修正</PageTitle>
+
+<h1>仕入伝票　修正</h1>
+
+@if (IsLoading)
+{
+	<div class="alert alert-info">データを読み込み中です...</div>
+}
+
+else if (!string.IsNullOrEmpty(ErrorMessage))
+{
+	<div class="alert alert-danger">@ErrorMessage</div>
+}
+
+else if (OriginalShiire == null)
+{
+	<div class="alert alert-warning">修正対象の仕入伝票が見つかりませんでした。</div>
+}
+
+else
+{
+	<div class="card p-4 shadow-sm">
+		<h2 class="card-title">伝票キー: @OriginalShiire.ShiireBi - @OriginalShiire.ShohinCode</h2>
+
+		<h4 class="mt-4">修正前の仕入伝票情報</h4>
+		<table class="table table-sm table-bordered">
+			<tbody>
+				<tr><th>仕入日付</th><td>@OriginalShiire.ShiireBi</td></tr>
+				<tr><th>仕入先コード</th><td>@OriginalShiire.ShiiresakiCode</td></tr>
+				<tr><th>数量</th><td>@OriginalShiire.Quantity</td></tr>
+			</tbody>
+		</table>
+
+		<hr class="my-4" />
+
+		@* 修正フォーム *@
+		<EditForm Model="@EditShiire" OnValidSubmit="UpdateShiireAsync">
+			<DataAnnotationsValidator />
+			<ValidationSummary />
+
+			<p class="text-danger">※日付と商品コードはキーとなるため、修正出来ません。</p>
+
+			<div class="row mb-3">
+				<label for="ShiireBi" class="col-sm-3 col-form-label">仕入日付（変更不可）</label>
+				<div class="col-sm-5">
+					<InputDate id="ShiireBi" @bind-Value="EditShiire.ShiireBi" class="form-control" Disabled />
+				</div>
+			</div>
+
+			<div class="row mb-3">
+				<label for="ShiiresakiCode" class="col-sm-3 col-form-label">仕入先コード</label>
+				<div class="col-sm-5">
+					<InputSelect id="ShiiresakiCode" @bind-Value="EditShiire.ShiiresakiCode" class="form-control">
+						<option value="">-- 選択してください --</option>
+						@foreach (var shiiresaki in ShiiresakiList)
+						{
+							<option value="@shiiresaki.ShiiresakiCode">@shiiresaki.ShiiresakiCode : @shiiresaki.ShiiresakiMeiKanji</option>
+						}
+					</InputSelect>
+					<ValidationMessage For="@(() => EditShiire.ShiiresakiCode)" />
+				</div>
+			</div>
+			<div class="row mb-3">
+				<label for="Quantity" class="col-sm-3 col-form-label">数量</label>
+				<div class="col-sm-3">
+					<InputNumber id="Quantity" @bind-Value="EditShiire.Quantity" class="form-control" />
+					<ValidationMessage For="@(() => EditShiire.Quantity)" />
+				</div>
+			</div>
+		</EditForm>
+	</div>
+	<button class="btn btn-secondary w-100 mb-3" @onclick="GoBack">
+		<span class="pointer-event oi-arrow-left"></span>仕入管理メニューへ戻る
+	</button>
+}
+
+@code {
+	[Parameter]
+	[SupplyParameterFromQuery(Name = "date")]
+	public string? DateString { get; set; }
+
+	[Parameter]
+	[SupplyParameterFromQuery(Name = "code")]
+	public string? Code { get; set; }
+
+	private bool IsLoading { get; set; } = true;
+	private string ErrorMessage { get; set; } = string.Empty;
+
+	private ShiireModel? OriginalShiire { get; set; }
+
+	private ShiireModel EditShiire { get; set; } = new();
+
+	private List<ShiiresakiModel> ShiiresakiList { get; set; } = new();
+
+	/// <summary>
+	/// 画面立ち上げ時の初期化メソッド
+	/// </summary>
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadRequiredDataAsync();
+	}
+
+	private async Task LoadRequiredDataAsync()
+	{
+		IsLoading = true;
+		ErrorMessage = string.Empty;
+
+		if (string.IsNullOrEmpty(DateString) || string.IsNullOrEmpty(Code))
+		{
+			ErrorMessage = "伝票キー（日付と商品コード）が不足しています。";
+			IsLoading = false;
+			return;
+		}
+
+		try
+		{
+			OriginalShiire = await ShiireRepo.GetByDateAndCodeAsync(DateString!, Code!);
+			if (OriginalShiire == null)
+			{
+				ErrorMessage = "指定された伝票キーに一致するデータが見つかりませんでした。";
+			}
+			else
+			{
+				EditShiire = new ShiireModel
+				{
+					ShiireBi = OriginalShiire.ShiireBi,
+					ShohinCode = OriginalShiire.ShohinCode,
+					ShiiresakiCode = OriginalShiire.ShiiresakiCode,
+					Quantity = OriginalShiire.Quantity,
+					Shiirene = OriginalShiire.Shiirene
+				};
+
+				ShiiresakiList = await ShiiresakiRepo.GetAllAsync();
+			}
+		}
+
+		catch (Exception ex)
+		{
+			ErrorMessage = $"データのロード中にシステムエラーが発生しました：{ex.Message}";
+		}
+
+		finally
+		{
+			IsLoading = false;
+		}
+	}
+
+	private async Task UpdateShiireAsync()
+	{
+		try
+		{
+			await ShiireRepo.UpdateAsync(EditShiire);
+			NavManager.NavigateTo("/shiire/menu", forceLoad: true);
+		}
+
+		catch (InvalidOperationException ex)
+		{
+			ErrorMessage = ex.Message;
+		}
+
+		catch (Exception ex)
+		{
+			ErrorMessage = $"修正処理中にエラーが発生しました:{ex.Message}";
+		}
+	}
+
+	private void ResetForm()
+	{
+		if (OriginalShiire != null)
+		{
+			EditShiire = new ShiireModel
+			{
+				ShiireBi = OriginalShiire.ShiireBi,
+				ShohinCode = OriginalShiire.ShohinCode,
+				ShiiresakiCode = OriginalShiire.ShiiresakiCode,
+				Quantity = OriginalShiire.Quantity,
+				Shiirene = OriginalShiire.Shiirene
+			};
+		}
+		ErrorMessage = string.Empty;
+	}
+
+	private void GoBack()
+	{
+		NavManager.NavigateTo("/shiire/menu");
+	}
+}

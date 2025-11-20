@@ -7,15 +7,13 @@
 
 <PageTitle>仕入登録結果</PageTitle>
 
-<h1 class="mb-4">仕入登録結果</h1>
-
 @if (ShiireService.LastRegisteredShiire is not null)
 {
     var s = ShiireService.LastRegisteredShiire;
 
     <div class="card p-4 shadow-sm mb-4">
         <p class="h4 text-success"> 以下の仕入を登録しました。</p>
-        <h2>登録された仕入情報</h2>
+        <h2>仕入テーブル</h2>
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -29,7 +27,7 @@
             <tbody>
                 <tr>
                     <td>@s.ShiireNo</td>
-                    <td>@s.ShiireNengappi</td>
+                    <td>@s.ShiireBi</td>
                     <td>@s.ShohinCode</td>
                     <td>@s.ShiiresakiCode</td>
                     <td>@s.Quantity</td>
@@ -41,7 +39,7 @@
     <div class="card p-4 shadow-sm mb-4">
         <p class="h4 text-success"> 以下の在庫を登録しました。</p>
 
-        <h2>登録された在庫情報</h2>
+        <h2>在庫テーブル</h2>
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -60,7 +58,7 @@
 
     <div class="d-flex gap-3 mt-4">
         <button class="btn btn-secondary" @onclick="NavigateBack">
-            <i class="bi bi-arrow-left"></i> メニューに戻る
+            <i class="bi bi-arrow-left w-80"></i> 仕入管理メニューに戻る
         </button>
     </div>
 }

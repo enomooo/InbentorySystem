@@ -17,10 +17,6 @@
 	</div>
 }
 
-<p class="text-muted">
-	検索結果が複数件でした。処理対象の伝票を選択してください。
-</p>
-
 @if (ShiireItems != null && ShiireItems.Count > 0)
 {
 	<div class="table-responsive">
@@ -42,7 +38,7 @@
 						class="@(SelectedShiire == shiire ? "table-primary" : "")">
 
 						<td>@shiire.ShiireNo</td>
-						<td>@shiire.ShiireNengappi</td>
+						<td>@shiire.ShiireBi</td>
 						<td>@shiire.ShohinCode</td>
 						<td>@shiire.ShiiresakiCode</td>
 						<td>@shiire.Quantity</td>

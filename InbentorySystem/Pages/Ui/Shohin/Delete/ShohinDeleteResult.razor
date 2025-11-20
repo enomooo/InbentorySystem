@@ -1,4 +1,4 @@
-﻿@page "/shohin/delete/result/{ShohinCode}"
+﻿@page "/shohin/delete/result/"
 @using InbentorySystem.Data.Models
 @using InbentorySystem.Infrastructure.Interfaces
 @using InbentorySystem.Infrastructure.Models
@@ -10,8 +10,6 @@
 <PageTitle>商品削除完了</PageTitle>
 
 <div class="card p-4 shadow-sm">
-    <h1>商品削除完了</h1>
-    <hr />
 
     @if (DeletedModel == null)
     {
@@ -21,8 +19,6 @@
     }
     else
     {
-        <h3>以下の商品と関連データ（在庫など）の削除が完了しました。</h3>
-
         <div class="p-3 mb-4 border rounded bg-light">
             <p class="mb-1">商品コード:@ShohinCode　を商品テーブルと在庫テーブルから削除しました</p>
         </div>
@@ -37,8 +33,8 @@
 
 @code {
     [Parameter]
+    [SupplyParameterFromQuery]
     public string ShohinCode { get; set; } = string.Empty;
-
     public ShohinModel? DeletedModel => ShohinService.LastDeletedShohin;
 
     /// <summary>
