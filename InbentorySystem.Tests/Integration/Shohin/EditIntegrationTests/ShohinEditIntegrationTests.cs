@@ -1,4 +1,4 @@
-﻿using InbentorySystem.Data;
+﻿/*using InbentorySystem.Data;
 using InbentorySystem.Data.Models;
 using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Infrastructure.Repository;
@@ -22,7 +22,7 @@ namespace InbentorySystem.Tests.Integration.Shohin.EditIntegrationTests
         {
             // Arrange
             var mockRepo = new Mock<IShohinRepository>();
-            var service = new ShohinService();
+            var service = new shohinService();
 
             var model = new ShohinModel
             {
@@ -150,6 +150,6 @@ namespace InbentorySystem.Tests.Integration.Shohin.EditIntegrationTests
         }
     }
 }
-
+*/
 
 

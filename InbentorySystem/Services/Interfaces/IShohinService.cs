@@ -106,5 +106,11 @@ namespace InbentorySystem.Services.Interfaces
         /// 削除対象プロパティ
         /// </summary>
         ShohinModel? LastDeletedShohin { get; }
+
+        /// <summary>
+        /// クエリに基づいて商品データを検索するロジックをリポジトリに委譲
+        /// </summary>
+        Task<List<ShohinModel>> SearchShohinAsync(string query);
+
     }
 }

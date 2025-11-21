@@ -50,17 +50,30 @@ else
 	</button>
 }
 
-@code{
+@code {
+	[Parameter]
+	[SupplyParameterFromQuery]
+	public string q { get; set; } = string.Empty;
+	private List<ShiireModel> ShiireList { get; set; } = new();
+
+	protected override void OnInitialized()
+	{
+		ShiireList = ShiireService.GetSearchResults();
+	}
 
 	/// <summary>
-	/// 選択された仕入データを保存する
+	/// 選択された仕入データを保存して、URLパラメータとして修正画面に遷移
 	/// </summary>
 	/// <param name="model"></param>
 	private void Edit(ShiireModel model)
 	{
+		string dateStr = model.ShiireBi ?? string.Empty;
+		string code = Uri.EscapeDataString(model.ShohinCode);
+
 		ShiireService.SetLastEditedShiire(model);
-		NavManager.NavigateTo("/shiire/edit/form");
+		NavManager.NavigateTo($"/shiire/edit/form");
 	}
+
 
 	/// <summary>
 	/// 仕入管理メニュー画面に戻る処理
@@ -69,5 +82,5 @@ else
 	{
 		ShiireService.Clear();
 		NavManager.NavigateTo("/shohin/menu");
-}
+	}
 }

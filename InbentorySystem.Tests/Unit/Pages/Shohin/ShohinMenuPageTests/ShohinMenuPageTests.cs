@@ -12,33 +12,39 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin.ShohinIndexPageTexts
     public class ShohinMenuPageTests
     {
         [Fact] // UT-SM-01: タイトルが表示される
-        public void ShohinMenu_ShohinRenderTitle()
+        public void ShohinMenu_ShouldRenderTitle()
         {
             using var ctx = new TestContext();
+            ctx.Services.AddSingleton(Mock.Of<IShohinRepository>());
+            ctx.Services.AddSingleton(Mock.Of<IShohinService>());
+            ctx.Services.AddSingleton(Mock.Of<IShiiresakiRepository>());
+            ctx.Services.AddSingleton<FakeNavigationManager>();
+
             var cut = ctx.RenderComponent<ShohinMenu>();
-            Assert.Contains("商品管理メニュー", cut.Markup);
 
+            Assert.Contains("商品管理メニュー", cut.Markup);
         }
-        
-        [Fact] // UT-SM-02: 商品検索ボタンで遷移する
-        public void ShihinIndex_ShouldNavigateToSearchResult()
+
+        [Fact] // UT-SM-02: 商品検索で該当なしの場合エラーメッセージが表示される
+        public async Task ShohinMenu_Search_ShouldShowError_WhenNoResults()
         {
             using var ctx = new TestContext();
-            var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
-
             var mockRepo = new Mock<IShohinRepository>();
-            mockRepo.Setup(R => R.SearchByKeywordAsync("牛刀"))
-                .ReturnsAsync(new List<ShohinModel> { new ShohinModel { ShohinMeiKanji = "牛刀" } });
-
-            var mockService = new Mock<IShohinService>();
-            mockService.Setup(s => s.GetNavigationUri("牛刀")).Returns("/shohin/list");
+            mockRepo.Setup(r => r.SearchByKeywordAsync("テスト"))
+                .Returns(Task.FromResult(new List<ShohinModel>()));
 
             ctx.Services.AddSingleton(mockRepo.Object);
-            ctx.Services.AddSingleton(mockService.Object);
+            ctx.Services.AddSingleton(Mock.Of<IShohinService>());
+            ctx.Services.AddSingleton(Mock.Of<IShiiresakiRepository>());
+            ctx.Services.AddSingleton<FakeNavigationManager>();
 
             var cut = ctx.RenderComponent<ShohinMenu>();
-            cut.Find("input[id=searchKeyword]").Change("牛刀");
-            cut.Find("button.btn-info").Click();
+
+            cut.Find("#searchKeyword").Change("テスト");
+
+
+            cut.WaitForAssertion(() =>
+                Assert.Contains("該当する商品はありませんでした", cut.Markup));
         }
 
         [Fact] // UT-SI-03: 商品検索ボタンで該当なしの場合はエラー表示
@@ -90,7 +96,7 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin.ShohinIndexPageTexts
         }
 
         [Fact] // UT-SI-05: 登録フォームで重複コードはエラー表示
-        public async Task ShohinIndex_ShoudShowError_WhenDuplicateCode()
+        public async Task ShohinMenu_ShoudShowError_WhenDuplicateCode()
         {
             using var ctx = new TestContext();
 
@@ -99,13 +105,16 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin.ShohinIndexPageTexts
 
             ctx.Services.AddSingleton(mockRepo.Object);
             ctx.Services.AddSingleton(Mock.Of<IShohinService>());
+            ctx.Services.AddSingleton(Mock.Of<IShiiresakiRepository>());
+            ctx.Services.AddSingleton<FakeNavigationManager>();
 
             var cut = ctx.RenderComponent<ShohinMenu>();
 
-            cut.Find("input[id=ShohinCode]").Change("A001");
+            cut.Find("#ShohinCode").Change("A001");
             await cut.Find("form").SubmitAsync();
 
-            Assert.Contains("この商品コードは既に登録されています", cut.Markup);
+            cut.WaitForAssertion(() =>
+                Assert.Contains("この商品コードは既に登録されています", cut.Markup));
         }
 
         [Fact] // UT-SI-06: 修正ボタンで検索結果があれば遷移する

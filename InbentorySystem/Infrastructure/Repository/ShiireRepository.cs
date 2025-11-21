@@ -1,6 +1,8 @@
 ﻿using Dapper;
 using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Data.Models;
+using Npgsql;
+using System.Data;
 
 namespace InbentorySystem.Infrastructure.Repository
 {
@@ -36,7 +38,7 @@ namespace InbentorySystem.Infrastructure.Repository
             var sql = @"
                    SELECT 
                         shiire_no AS ShiireNo,
-                        shiire_bi AS ShiireNengappi,
+                        shiire_bi AS ShiireBi,
                         shohin_code AS ShohinCode,
                         siiresaki_code AS ShiiresakiCode,
                         suryo AS Quantity
@@ -79,16 +81,16 @@ namespace InbentorySystem.Infrastructure.Repository
         public async Task<List<ShiireModel>> SearchByDateAsync(DateTime date, string shohinCode)
         {
             var sql = @" 
-                SELECT shiire_no,
-                        shiire_bi AS ShiireNengappi,
-                shohin_code AS ShohinCode,
-                siiresaki_code AS ShiiresakiCode,
-                suryo AS Quantity
+                SELECT shiire_no AS ShiireMo,
+                        shiire_bi AS ShiireBi,
+                        shohin_code AS ShohinCode,
+                        siiresaki_code AS ShiiresakiCode,
+                        suryo AS Quantity
             FROM t_shiire
             WHERE shiire_bi = @Date";
+
             var parameters = new DynamicParameters();
             parameters.Add("@Date", date.Date);
-
 
             if (!string.IsNullOrEmpty(shohinCode))
             {
@@ -112,6 +114,57 @@ namespace InbentorySystem.Infrastructure.Repository
         }
 
         /// <summary>
+        /// 日付と商品コードから仕入検索（修正と削除）
+        /// </summary>
+        /// <param name="date">年月日</param>
+        /// <param name="code">商品コード</param>
+        /// <returns>該当したShiireModel</returns>
+        /// <exception cref="ApplicationException"></exception>
+        // ShiireRepository.cs
+
+        public async Task<ShiireModel?> GetByDateAndCodeAsync(string date, string code)
+        {
+            // 日付変換チェック
+            if (!DateTime.TryParse(date, out DateTime parsedDate))
+            {
+                throw new ArgumentException("日付の形式が不正です");
+            }
+
+            const string sql = @"
+        SELECT 
+            shiire_no AS ShiireNo,
+            shiire_bi::text AS ShiireBi, -- string型に合わせるためキャスト
+            shohin_code AS ShohinCode,
+            siiresaki_code AS ShiiresakiCode,
+            suryo AS Quantity
+        FROM t_shiire 
+        WHERE 
+            shiire_bi = @ShiireNengappi  -- DB列名: shiire_bi
+            AND 
+            shohin_code = @ShohinCode;   -- DB列名: shohin_code
+    ";
+
+            // パラメータ名 (@ShiireNengappi, @ShohinCode) と一致させる
+            var parameters = new
+            {
+                ShiireNengappi = parsedDate, // DateTime型で渡す
+                ShohinCode = code
+            };
+
+            try
+            {
+                using (var connection = _connectionFactory.CreateConnection())
+                {
+                    return await _executor.QueryFirstOrDefaultAsync<ShiireModel>(connection, sql, parameters);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("仕入伝票の単一取得中にエラーが発生しました。", ex);
+            }
+        }
+
+        /// <summary>
         /// DBにトランザクションでT_SHIIREとT_ZAIKOに登録処理
         /// </summary>
         /// <param name="shiire">新規登録するmodel</param>
@@ -120,26 +173,30 @@ namespace InbentorySystem.Infrastructure.Repository
         {
             shiire.Tourokunichiji = DateTime.Now;
 
-            
-            const string sql = @"
-        INSERT INTO t_shiire (shiire_bi, shohin_code, siiresaki_code, suryo)
-        VALUES (@ShiireNengappiParam, @ShohinCode, @ShiiresakiCode, @Quantity);
+            if (!DateTime.TryParse(shiire.ShiireBi, out DateTime parsedShiireDate))
+            {
+                throw new FormatException("仕入日付の書式が不正です。YYYY/MM/DD 形式で入力してください。");
+            }
 
-        INSERT INTO t_zaiko (shohin_code, suryo, koushin_nichiji)
-        VALUES (@ShohinCode, @Quantity, @Tourokunichiji)
-        ON CONFLICT (shohin_code)
-        DO UPDATE SET
-            suryo = t_zaiko.suryo + EXCLUDED.suryo, 
-            koushin_nichiji = EXCLUDED.koushin_nichiji;
-        ";
+            const string sql = @"
+                INSERT INTO t_shiire (shiire_bi, shohin_code, siiresaki_code, suryo)
+                VALUES (@ShiireNengappiParam, @ShohinCode, @ShiiresakiCode, @Quantity);
+
+                INSERT INTO t_zaiko (shohin_code, suryo, koushin_nichiji)
+                VALUES (@ShohinCode, @Quantity, @Tourokunichiji)
+                ON CONFLICT (shohin_code)
+                DO UPDATE SET
+                    suryo = t_zaiko.suryo + @Quantity, 
+                    koushin_nichiji = @Tourokunichiji;
+                ";
 
             var parameters = new
             {
-                shiire.ShiireBi,
+                ShiireBiParam = parsedShiireDate,
                 shiire.ShohinCode,
                 shiire.ShiiresakiCode,
                 shiire.Quantity,
-                shiire.Tourokunichiji
+                Tourokunichiji = DateTime.Now
             };
 
             try
@@ -158,114 +215,49 @@ namespace InbentorySystem.Infrastructure.Repository
         }
 
         /// <summary>
-        /// DBにアクセスして検索処理
-        /// </summary>
-        /// <param name="dateFrom">何日～</param>
-        /// <param name="dateTo">何日まで</param>
-        /// <param name="shohinCode">商品コード</param>
-        /// <returns></returns>
-        /// <exception cref="ApplicationException"></exception>
-        public async Task<List<ShiireModel>> SearchAsync(string dateFrom, string dateTo, string shohinCode)
-        {
-            // 常に真の条件を設け、WHERE句の動的構築を容易にする
-            var sql = @" SELECT * FROM T_SHIIRE WHERE 1 = 1 ";
-            var parameters = new DynamicParameters();
-
-            if (!string.IsNullOrEmpty(dateFrom))
-            {
-                sql += " AND shiire_bi >= @DateFrom";
-                parameters.Add("@DateFrom", dateFrom);
-            }
-
-            if (!string.IsNullOrEmpty(dateTo))
-            {
-                sql += " AND shiire_bi <= @DateTo ";
-                parameters.Add("@DateTo", dateTo);
-            }
-
-            if (!string.IsNullOrEmpty(shohinCode))
-            {
-                sql += "AND shohincode LIKE @ShohinCode ";
-                parameters.Add("@ShohinCode", $"%{shohinCode}%");
-            }
-            sql += " ORDER BY shiire_bi DESC, shohincode ASC;";
-
-            try
-            {
-                using (var connection = _connectionFactory.CreateConnection())
-                {
-                    var result = await _executor.QueryAsync<ShiireModel>(connection, sql, parameters);
-                    return result.ToList();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new ApplicationException("仕入伝票の検索中にエラーが発生しました。", ex);
-            }
-        }
-
-        /// <summary>
-        /// 日付と商品コードから仕入検索（修正と削除）
-        /// </summary>
-        /// <param name="date">年月日</param>
-        /// <param name="code">商品コード</param>
-        /// <returns>該当したShiireModel</returns>
-        /// <exception cref="ApplicationException"></exception>
-        public async Task<ShiireModel?> GetByDateAndCodeAsync(string date, string code)
-        {
-            const string sql = @"
-                SELECT * FROM 
-                T_SHIIRE WHERE 
-                shiire_bi = @ShiireNengappi 
-                AND
-                shohincode = @ShohinCode;";
-
-            var parameters = new { ShiireNengappi = date, ShohinCode = code };
-            try
-            {
-                using (var connection = _connectionFactory.CreateConnection())
-                {
-                    return await _executor.QueryFirstOrDefaultAsync<ShiireModel>(connection, sql, parameters);
-                }
-            }
-
-            catch (Exception ex)
-            {
-                throw new ApplicationException("仕入伝票の単一取得中にエラーが発生しました。", ex);
-            }
-        }
-
-        /// <summary>
         /// トランザクション処理でDB修正メソッド
         /// </summary>
         /// <param name="shiire">選択されたShiireModel</param>
         /// <returns>修正結果</returns>
         public async Task<int> UpdateAsync(ShiireModel shiire)
         {
+            if (!DateTime.TryParse(shiire.ShiireBi, out DateTime parsedShiireDate))
+            {
+                throw new FormatException("仕入日付の書式が不正です。YYYY/MM/DD 形式で入力してください。");
+            }
+
             const string getOldQuantitySql = @" 
-            SELECT quantity FROM T_SHIIRE 
-            WHERE shiiresakinengappi = @ShiireNengappi 
+            SELECT suryo FROM t_shiire 
+            WHERE shiire_bi = @ShiireNengappi 
             AND
-            shohincode = @ShohinCode;";
+            shohin_code = @ShohinCode;";
 
             const string updateShiireSql = @"
-            UPDATE T_SHIIRE SET
-            shiiresakinengappi = @ShiireNengappi,
-            shohincode = @ShohinCode,
+            UPDATE t_shiire SET
+            shiire_bi = @ShiireNengappi,
+            shohin_code = @ShohinCode,
             shiiresaki_code = @ShiiresakiCode, 
-            quantity = @Quantity, 
-            shiirene = @Shiirene 
+            suryo = @Quantity, 
             WHERE
-            shiiresakinengappi = @ShiireNengappi 
+            shiire_bi = @ShiireNengappi 
             AND 
-            shohincode = @ShohinCode;";
+            shohin_code = @ShohinCode;";
 
             const string updateZaikoSql = @"
-            UPDATE T_ZAIKO SET 
-            currentquantity = currentquantity + @QuantityDifference,
-            kousinnichiji = NOW() 
+            UPDATE t_zaiko SET 
+            suryo = suryo + @QuantityDifference,
+            kousin_nichiji = NOW() 
             WHERE
-            shohincode = @ShohinCode;";
+            shohin_code = @ShohinCode;";
+
+            var shiireParam = new
+            {
+                ShiireNengappi = parsedShiireDate,
+                shiire.ShohinCode,
+                shiire.ShiiresakiCode,
+                shiire.Quantity
+            
+            };
 
             using (var connection = _connectionFactory.CreateConnection())
             {
@@ -274,18 +266,15 @@ namespace InbentorySystem.Infrastructure.Repository
                 {
                     try
                     {
-                        var oldQuantity = await _executor.QueryFirstOrDefaultAsync<int>(connection, getOldQuantitySql, shiire, transaction);
-                        if (oldQuantity == default)
-                        {
-                            throw new InvalidOperationException("修正対象が見つかりません。");
-                        }
-                        var quantityDifference = shiire.Quantity - oldQuantity;
+                        var oldQuantity = await _executor.QueryFirstOrDefaultAsync<int>(connection, getOldQuantitySql, shiireParam, transaction);
+                        var quantityDifference = (shiire.Quantity ?? 0) - oldQuantity;
+
                         await connection.ExecuteAsync(updateShiireSql, shiire, transaction: transaction);
 
                         var zaikoParam = new
                         {
                             shiire.ShohinCode,
-                            quantityDifference
+                            QuantityDifference = quantityDifference,
                         };
 
                         await connection.ExecuteAsync(updateZaikoSql, zaikoParam, transaction: transaction);

@@ -3,7 +3,9 @@
 @using InbentorySystem.Infrastructure
 @using InbentorySystem.Infrastructure.Repository
 @using InbentorySystem.Infrastructure.Interfaces
+@using InbentorySystem.Services.Interfaces
 @inject IShohinRepository ShohinRepo
+@inject IShohinService ShohinService
 @inject NavigationManager NavManager
 
 <PageTitle>商品検索結果</PageTitle>
@@ -58,16 +60,17 @@ else
 @code {
 	[Parameter]
 	[SupplyParameterFromQuery]
-	// URLクエリから渡される検索キーワード
 	public string q { get; set; } = string.Empty;
+
 	private List<ShohinModel> ShohinList { get; set; } = new();
 	private bool IsLoading = true;
 	private string ErrorMessage = string.Empty;
 
+
 	/// <summary>
 	/// 初回データロードの実行
 	/// </summary>
-	protected override async Task OnInitializedAsync()
+	protected override async Task OnParametersSetAsync()
 	{
 		await LoadDataAsync();
 	}
@@ -82,6 +85,7 @@ else
 		{
 			ErrorMessage = "システムエラー：商品リポジトリが初期化されていません";
 			IsLoading = false;
+			StateHasChanged();
 			return;
 		}
 
@@ -90,16 +94,7 @@ else
 
 		try
 		{
-			string keyword = q;
-			if (string.IsNullOrWhiteSpace(q))
-			{
-				keyword = "all";
-				Console.WriteLine("[DEBUG] Empty query treated as 'all'.");
-			}
-
-			ShohinList = keyword.ToLower() == "all"
-					? await ShohinRepo.GetAllAsync()
-					: await ShohinRepo.SearchByKeywordAsync(keyword);
+			ShohinList = await ShohinService.SearchShohinAsync(q);
 		}
 		catch (Exception ex)
 		{
@@ -110,6 +105,7 @@ else
 		finally
 		{
 			IsLoading = false;
+			StateHasChanged();
 		}
 	}
 

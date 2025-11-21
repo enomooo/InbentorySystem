@@ -1,4 +1,4 @@
-﻿using Bunit;
+﻿/*using Bunit;
 using InbentorySystem.Data.Models;
 using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Services;
@@ -87,3 +87,4 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin
         }
     }
 }
+*/

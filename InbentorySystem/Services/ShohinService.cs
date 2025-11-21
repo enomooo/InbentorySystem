@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Diagnostics;
 using InbentorySystem.Data.Models;
+using InbentorySystem.Infrastructure.Repository;
 using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Services.Interfaces;
 
@@ -19,6 +21,16 @@ namespace InbentorySystem.Services
         private ShohinModel? _lastEditedShohin;
         private ShohinModel? _lastDeletedShohin;
         private List<ShohinModel> _shohinList = new();
+
+        private readonly IShohinRepository _shohinRepo;
+
+        /// <summary>
+        /// リポジトリのコンストラクタ
+        /// </summary>
+        public ShohinService(IShohinRepository shohinRepo)
+        {
+            _shohinRepo = shohinRepo;
+        }
 
         /// <summary>
         /// 商品一覧の保持
@@ -143,6 +155,15 @@ namespace InbentorySystem.Services
         }
 
         public ShohinModel? LastDeletedShohin => _lastDeletedShohin;
+
+        /// <summary>
+        /// 削除対象の取得
+        /// </summary>
+        /// <returns></returns>
+        public ShohinModel? GetLastDeletedShohin()
+        {
+            return _lastDeletedShohin;
+        }
         
         /// <summary>
         /// 削除対象の商品データをrepository経由で削除するメソッド
@@ -159,15 +180,6 @@ namespace InbentorySystem.Services
         }
 
         /// <summary>
-        /// 最後に削除された商品モデルを取得する
-        /// </summary>
-        /// <returns>削除された商品モデル</returns>
-        public ShohinModel? GetLastDeletedShohin()
-        {
-            return _lastDeletedShohin;
-        }
-
-        /// <summary>
         /// 状態とキーワードに基づく遷移先を動的に生成
         /// </summary>
         /// <param name="keyword">検索keyword</param>
@@ -180,6 +192,23 @@ namespace InbentorySystem.Services
             return string.IsNullOrWhiteSpace(keyword)
                 ? "/shohin/list?q=all"
                 : $"/shohin/list?q={Uri.EscapeDataString(keyword)}";
+        }
+
+        /// <summary>
+        /// 検索メソッド
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        public async Task<List<ShohinModel>> SearchShohinAsync(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query) || query.ToLower() == "all")
+            {
+                return await _shohinRepo.GetAllAsync();
+            }
+            else
+            {
+                return await _shohinRepo.SearchByKeywordAsync(query);
+            }
         }
     }
 }

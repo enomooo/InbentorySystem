@@ -10,10 +10,36 @@ namespace InbentorySystem.Tests.Unit.Services
     {
         // サービスはテストごとに初期化されるようにする
         private ShohinService _service;
+
+        private readonly Mock<IShohinRepository> _mockRepo;
+
         public ShohinServiceTests()
         {
-            _service = new ShohinService();
+            _mockRepo = new Mock<IShohinRepository>();
+            _service = new ShohinService(_mockRepo.Object);
         }
+
+        [Fact] // UT-SSV-01: クエリが空の場合、全件検索が実行されること
+        public async Task SearchShohinAsync_RetrunsAll_WhenQueryIsEmpty()
+        {
+            // Arrange
+            var expectedList = new List<ShohinModel>
+            {
+                new ShohinModel{ShohinCode = "ALL01"}
+            };
+
+            _mockRepo.Setup(r => r.GetAllAsync())
+                        .ReturnsAsync(expectedList);
+
+            // ACT
+            var result = await _service.SearchShohinAsync("");
+
+            // Assert
+            Assert.Equal(expectedList, result);
+            _mockRepo.Verify(r => r.GetAllAsync(), Times.Once);
+            _mockRepo.Verify(r => r.SearchByKeywordAsync(It.IsAny<string>()), Times.Never);
+        }
+
 
         [Fact] // UT-SH-01: キーワードなし ->全一覧へ
         public void GetNavigationUri_ShouldNavigateToAllList_WhenKeywordIsWhitespace()

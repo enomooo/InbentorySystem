@@ -1,13 +1,15 @@
-﻿@page "/shiire/edit"
-@page "/shiire/edit/{DateString}/{Code}"
+﻿@page "/shiire/edit/form"
 @using InbentorySystem.Data.Models
 @using InbentorySystem.Infrastructure.Interfaces
 @using InbentorySystem.Infrastructure.Models
+@using InbentorySystem.Services
 @using InbentorySystem.Services.Interfaces
 @using Microsoft.AspNetCore.Components.Forms
 @inject IShiireRepository ShiireRepo
 @inject IShiiresakiRepository ShiiresakiRepo
+@inject IShiireService _shiireService
 @inject NavigationManager NavManager
+
 
 <PageTitle>仕入修正</PageTitle>
 
@@ -31,7 +33,7 @@ else if (OriginalShiire == null)
 else
 {
 	<div class="card p-4 shadow-sm">
-		<h2 class="card-title">伝票キー: @OriginalShiire.ShiireBi - @OriginalShiire.ShohinCode</h2>
+		<h2 class="card-title">修正対象: @EditShiire.ShiireBi - @EditShiire.ShohinCode</h2>
 
 		<h4 class="mt-4">修正前の仕入伝票情報</h4>
 		<table class="table table-sm table-bordered">
@@ -42,6 +44,7 @@ else
 			</tbody>
 		</table>
 
+
 		<hr class="my-4" />
 
 		@* 修正フォーム *@
@@ -49,12 +52,10 @@ else
 			<DataAnnotationsValidator />
 			<ValidationSummary />
 
-			<p class="text-danger">※日付と商品コードはキーとなるため、修正出来ません。</p>
-
 			<div class="row mb-3">
 				<label for="ShiireBi" class="col-sm-3 col-form-label">仕入日付（変更不可）</label>
 				<div class="col-sm-5">
-					<InputDate id="ShiireBi" @bind-Value="EditShiire.ShiireBi" class="form-control" Disabled />
+					<InputText id="ShiireBi" @bind-Value="EditShiire.ShiireBi" class="form-control" Disabled />
 				</div>
 			</div>
 
@@ -86,22 +87,14 @@ else
 }
 
 @code {
-	[Parameter]
-	[SupplyParameterFromQuery(Name = "date")]
-	public string? DateString { get; set; }
-
-	[Parameter]
-	[SupplyParameterFromQuery(Name = "code")]
-	public string? Code { get; set; }
-
 	private bool IsLoading { get; set; } = true;
 	private string ErrorMessage { get; set; } = string.Empty;
 
+	private ShiireModel? EditShiire { get; set; } 
 	private ShiireModel? OriginalShiire { get; set; }
 
-	private ShiireModel EditShiire { get; set; } = new();
-
 	private List<ShiiresakiModel> ShiiresakiList { get; set; } = new();
+
 
 	/// <summary>
 	/// 画面立ち上げ時の初期化メソッド
@@ -111,34 +104,33 @@ else
 		await LoadRequiredDataAsync();
 	}
 
+
+
+
+
 	private async Task LoadRequiredDataAsync()
 	{
 		IsLoading = true;
 		ErrorMessage = string.Empty;
 
-		if (string.IsNullOrEmpty(DateString) || string.IsNullOrEmpty(Code))
-		{
-			ErrorMessage = "伝票キー（日付と商品コード）が不足しています。";
-			IsLoading = false;
-			return;
-		}
-
 		try
 		{
-			OriginalShiire = await ShiireRepo.GetByDateAndCodeAsync(DateString!, Code!);
-			if (OriginalShiire == null)
+			var original = _shiireService.GetLastEditedShiire();
+
+			if (original == null)
 			{
-				ErrorMessage = "指定された伝票キーに一致するデータが見つかりませんでした。";
+				return;
 			}
+
 			else
 			{
 				EditShiire = new ShiireModel
 				{
-					ShiireBi = OriginalShiire.ShiireBi,
-					ShohinCode = OriginalShiire.ShohinCode,
-					ShiiresakiCode = OriginalShiire.ShiiresakiCode,
-					Quantity = OriginalShiire.Quantity,
-					Shiirene = OriginalShiire.Shiirene
+					ShiireBi = original.ShiireBi,
+					ShohinCode = original.ShohinCode,
+					ShiiresakiCode = original.ShiiresakiCode,
+					Quantity = original.Quantity,
+					Shiirene = original.Shiirene
 				};
 
 				ShiiresakiList = await ShiiresakiRepo.GetAllAsync();
@@ -158,10 +150,14 @@ else
 
 	private async Task UpdateShiireAsync()
 	{
+
+		if (EditShiire == null) return;
+		
 		try
 		{
 			await ShiireRepo.UpdateAsync(EditShiire);
-			NavManager.NavigateTo("/shiire/menu", forceLoad: true);
+			_shiireService.SetLastEditedShiire(EditShiire);
+			NavManager.NavigateTo("/shiire/edit/result", forceLoad: true);
 		}
 
 		catch (InvalidOperationException ex)
@@ -177,15 +173,17 @@ else
 
 	private void ResetForm()
 	{
-		if (OriginalShiire != null)
+		var original = _shiireService.GetLastEditedShiire();
+		if (original != null)
 		{
 			EditShiire = new ShiireModel
 			{
-				ShiireBi = OriginalShiire.ShiireBi,
-				ShohinCode = OriginalShiire.ShohinCode,
-				ShiiresakiCode = OriginalShiire.ShiiresakiCode,
-				Quantity = OriginalShiire.Quantity,
-				Shiirene = OriginalShiire.Shiirene
+				ShiireBi = string.Empty,
+				ShohinCode = string.Empty,
+				ShiiresakiCode = string.Empty,
+				Quantity = null,
+				// todo: 仕入値空白の仕方を考える
+				Shiirene = original.Shiirene
 			};
 		}
 		ErrorMessage = string.Empty;
