@@ -50,7 +50,7 @@ namespace InbentorySystem.Tests.Unit.Repositories
                 It.IsAny<string>(),
                 It.IsAny<object?>(),
                 It.IsAny<IDbTransaction?>()),
-                Times.Exactly(2),
+                Times.Exactly(3),
                 "T_ZAIKOとM_SHOHINの２つのDELETEが実行されるべきです。");
         }
 
@@ -112,7 +112,7 @@ namespace InbentorySystem.Tests.Unit.Repositories
 
             mockExecutor.Verify(
             e => e.ExecuteAsync(It.IsAny<string>(), It.IsAny<object?>(), It.IsAny<IDbTransaction?>()),
-            Times.Exactly(2));
+            Times.Exactly(3));
         }
 
         [Fact]　// UT-SR-11: 商品削除のテスト（正常系）
