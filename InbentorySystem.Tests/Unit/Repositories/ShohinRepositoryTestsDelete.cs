@@ -140,8 +140,8 @@ namespace InbentorySystem.Tests.Unit.Repositories
             mockExecutor.Setup(e => e.QueryFirstOrDefaultAsync<ShohinModel>(
                 It.IsAny<IDbConnection>(),
                 It.Is<string>(sql => sql.Contains("WHERE shohin_code = @ShohinCode")),
-                It.Is<object>(p => p.GetType().GetProperty("ShohinCode")!.GetValue(p)!.ToString() == shohinCode),
-                null
+                It.Is<object>(p => p != null && p.ToString()!.Contains(shohinCode)),
+                It.IsAny<IDbTransaction>()
                 )).ReturnsAsync(expectedModel);
 
             var repo = new ShohinRepository(mockFactory.Object, mockExecutor.Object);

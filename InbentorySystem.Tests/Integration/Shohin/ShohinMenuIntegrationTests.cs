@@ -2,8 +2,11 @@
 using Bunit.TestDoubles;
 using InbentorySystem.Data.Models;
 using InbentorySystem.Infrastructure.Interfaces;
-using InbentorySystem.Services.Interfaces;
+using InbentorySystem.Infrastructure.Models;
 using InbentorySystem.Pages.Ui.Shohin;
+using InbentorySystem.Services.Interfaces;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
@@ -16,21 +19,31 @@ namespace InbentorySystem.Tests.Integration.Shohin
         {
             using var ctx = new TestContext();
 
+            // Arrange
             var mockRepo = new Mock<IShohinRepository>();
+            var mockService = new Mock<IShohinService>();
+            var mockShiiresakiRepo = new Mock<IShiiresakiRepository>();
+            var shiiresakiData = new List<ShiiresakiModel> { new ShiiresakiModel { ShiiresakiCode = "S001" } };
+
             mockRepo.Setup(r => r.CheckDuplicateCodeAsync("A001")).ReturnsAsync(false);
             mockRepo.Setup(r => r.RegisterAsync(It.IsAny<ShohinModel>())).ReturnsAsync(1);
-
+            mockShiiresakiRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(shiiresakiData);
+            
             ctx.Services.AddSingleton(mockRepo.Object);
-            ctx.Services.AddSingleton(Mock.Of<IShohinService>());
+            ctx.Services.AddSingleton(mockService.Object);
+            ctx.Services.AddSingleton(mockShiiresakiRepo.Object);
+            ctx.Services.AddSingleton<FakeNavigationManager>();
 
             var cut = ctx.RenderComponent<ShohinMenu>();
+
+            cut.WaitForState(() => cut.Instance.ShiiresakiList.Any(), TimeSpan.FromSeconds(2));
 
             cut.Find("input[id=ShohinCode]").Change("A001");
             cut.Find("input[id=KanjiName]").Change("牛刀");
             cut.Find("input[id=KanaName]").Change("ぎゅうとう");
             cut.Find("input[id=Shiirene]").Change("1500");
             cut.Find("input[id=Urine]").Change("3000");
-            cut.Find("input[id=ShiiresakiCode]").Change("S001");
+            cut.Find("select[id=ShiiresakiCode]").Change(new ChangeEventArgs { Value = "S001" });
 
             await cut.Find("Form").SubmitAsync();
 
@@ -43,41 +56,66 @@ namespace InbentorySystem.Tests.Integration.Shohin
             using var ctx = new TestContext();
 
             var mockRepo = new Mock<IShohinRepository>();
+            var mockService = new Mock<IShohinService>();
+            var mockShiiresakiRepo = new Mock<IShiiresakiRepository>();
+            var shiiresakiData = new List<ShiiresakiModel> { new ShiiresakiModel { ShiiresakiCode = "S001" } };
+
             mockRepo.Setup(r => r.CheckDuplicateCodeAsync("A001")).ReturnsAsync(true);
+            mockShiiresakiRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(shiiresakiData);
 
             ctx.Services.AddSingleton(mockRepo.Object);
             ctx.Services.AddSingleton(Mock.Of<IShohinService>());
+            ctx.Services.AddSingleton(mockShiiresakiRepo.Object);
+            ctx.Services.AddSingleton<FakeNavigationManager>();
 
             var cut = ctx.RenderComponent<ShohinMenu>();
 
+            cut.WaitForState(() => cut.Instance.ShiiresakiList.Any(), TimeSpan.FromSeconds(2));
+
             cut.Find("input[id=ShohinCode]").Change("A001");
+            cut.Find("input[id=KanjiName]").Change("ダミー漢字");
+            cut.Find("input[id=KanaName]").Change("ダミーかな");
+            cut.Find("input[id=Shiirene]").Change("1500");
+            cut.Find("input[id=Urine]").Change("3000");
+            cut.Find("select[id=ShiiresakiCode]").Change(new ChangeEventArgs { Value = "S001" });
             await cut.Find("form").SubmitAsync();
 
-            Assert.Contains("この商品コードは既に登録されています", cut.Markup);
+            cut.WaitForAssertion(() =>
+            Assert.Contains("この商品コードは既に登録されています", cut.Markup));
+
+            mockRepo.Verify(r => r.CheckDuplicateCodeAsync("A001"), Times.Once);
         }
 
         [Fact] // IT-SM-03: 修正キーワード入力 -> 修正画面に遷移
-        public void ShohinMenu_ShouldNavigateToEditSelect_WhenEditKeywordEntered()
+        public async Task ShohinMenu_ShouldNavigateToEditSelect_WhenEditKeywordEntered()
         {
             using var ctx = new TestContext();
-            var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
 
             var mockRepo = new Mock<IShohinRepository>();
-            mockRepo.Setup(r => r.SearchByKeywordAsync("牛刀"))
-                .ReturnsAsync(new List<ShohinModel> { new ShohinModel { ShohinMeiKanji = "牛刀" } });
-
             var mockService = new Mock<IShohinService>();
+            var mockShiiresakiRepo = new Mock<IShiiresakiRepository>();
+            var shiiresakiData = new List<ShiiresakiModel> { new ShiiresakiModel { ShiiresakiCode = "S001" } };
+
+            mockRepo.Setup(r => r.SearchByKeywordAsync("牛刀"))
+                    .ReturnsAsync(new List<ShohinModel> { resultShohin });
+
             mockService.SetupProperty(s => s.LastEditedShohin);
             mockService.Setup(s => s.SetLastEditedShohin(It.IsAny<ShohinModel>()));
-
+            mockShiiresakiRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<ShiiresakiModel>());
 
             ctx.Services.AddSingleton(mockRepo.Object);
             ctx.Services.AddSingleton(mockService.Object);
+            ctx.Services.AddSingleton(mockShiiresakiRepo.Object);
+            ctx.Services.AddSingleton<FakeNavigationManager>();
+
+            var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
 
             var cut = ctx.RenderComponent<ShohinMenu>();
 
+            cut.WaitForAssertion(() => cut.Instance.ShiiresakiList.Any(),TimeSpan.FromSeconds(2));
             cut.Find("input[id=editKeyword]").Change("牛刀");
-            cut.FindAll("button").First(b => b.TextContent.Contains("修正画面へ")).Click();
+            
+            await cut.FindAll("button").First(b => b.TextContent.Contains("修正画面へ")).ClickAsync(new MouseEventArgs());
 
             Assert.Contains("/shohin/edit/select", nav.Uri);
         }

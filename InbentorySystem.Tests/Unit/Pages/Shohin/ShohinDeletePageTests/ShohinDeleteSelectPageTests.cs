@@ -3,101 +3,157 @@ using Bunit.TestDoubles;
 using InbentorySystem.Data.Models;
 using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Pages.Ui.Shohin.Delete;
+using InbentorySystem.Services.Interfaces;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+
 
 namespace InbentorySystem.Tests.Unit.Pages.Shohin.ShohinDeletePageTests
 {
     public class ShohinDeleteSelectPageTests
     {
-        [Fact] // UT-SD-01: 検索結果が表示される
-        public void ShohinDeleteSelect_ShouldRenderShohinList()
-        {
-            using var ctx = new TestContext();
+        private readonly TestContext ctx = new();
+        private readonly Mock<IShohinRepository> mockRepo = new();
+        private readonly Mock<IShohinService> mockService = new();
 
-            var mockRepo = new Mock<IShohinRepository>();
+        private readonly ShohinModel DummyResults = new()
+        {
+            ShohinCode = "A001",
+            ShohinMeiKanji = "牛刀",
+            ShohinMeiKana = "ぎゅうとう",
+            Shiirene = 1500,
+            Urine = 2900,
+            ShiiresakiCode = "S001"
+        };
+
+        public ShohinDeleteSelectPageTests()
+        {
+            ctx.Services.AddSingleton(mockRepo.Object);
+            ctx.Services.AddSingleton(mockService.Object);
+            ctx.Services.AddSingleton<FakeNavigationManager>();
+        }
+
+        [Fact] // UT-SD-01: 検索結果が表示される
+        public async Task ShohinDeleteSelect_ShouldRenderShohinList()
+        {
+            // Arrange
+            var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
+
             mockRepo.Setup(r => r.SearchByKeywordAsync("牛刀"))
-                .ReturnsAsync(new List<ShohinModel>
+                .Returns(async () =>
                 {
-                new ShohinModel { ShohinCode = "A001", ShohinMeiKanji = "牛刀", ShohinMeiKana = "ぎゅうとう", Shiirene = 1500, Urine = 2900, ShiiresakiCode = "S001" }
+                    await Task.Delay(1);
+                    return new List<ShohinModel> { new ShohinModel { ShohinCode = "A001", ShohinMeiKanji = "牛刀", Shiirene = 1500 } };
                 });
 
-            ctx.Services.AddSingleton(mockRepo.Object);
+            nav.NavigateTo("http://localhost/shohin/delete/select?q=牛刀");
 
-            var cut = ctx.RenderComponent<ShohinDeleteSelect>(parameters => parameters.Add(p => p.q, "牛刀"));
+            // Act
+            var cut = ctx.RenderComponent<ShohinDeleteSelect>();
 
-            Assert.Contains("牛刀", cut.Markup);
-            Assert.Contains("削除", cut.Markup);
+            await Task.Delay(10);
+
+            // Assert
+            cut.WaitForAssertion(() =>
+            {
+                Assert.Contains("牛刀", cut.Markup);
+                Assert.Contains("削除", cut.Markup);
+                Assert.Contains("検索結果: **1 件**", cut.Markup);
+            }, TimeSpan.FromSeconds(1));
         }
 
         [Fact] // UT-SD-02: 検索結果が0件なら警告表示
-        public void ShohinDeleteSelect_ShohinShowWarning_WhenNoResults()
+        public async Task ShohinDeleteSelect_ShohinShowWarning_WhenNoResults()
         {
-            using var ctx = new TestContext();
+            // Arrange
+            var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
 
-            var mockRepo = new Mock<IShohinRepository>();
+
             mockRepo.Setup(r => r.SearchByKeywordAsync("なし"))
-                .ReturnsAsync(new List<ShohinModel>());
+                .Returns(async () =>
+                {
+                    await Task.Delay(1);
+                    return new List<ShohinModel>();
+                });
 
-            ctx.Services.AddSingleton(mockRepo.Object);
+            nav.NavigateTo("http://localhost/shohin/delete/select?q=牛刀");
 
-            var cut = ctx.RenderComponent<ShohinDeleteSelect>(parameters => parameters.Add(p => p.q, "なし"));
+            // Act
+            var cut = ctx.RenderComponent<ShohinDeleteSelect>();
 
-            Assert.Contains("該当する商品が見つかりませんでした", cut.Markup);
+            await Task.Delay(10);
+
+            // Assert
+            cut.WaitForAssertion(() =>
+            {
+                Assert.Contains("該当する商品が見つかりませんでした", cut.Markup);
+            }, TimeSpan.FromSeconds(1));
         }
 
         [Fact] // UT-SD-03: クエリが空ならエラー表示
         public void ShohinDeleteSelect_ShouldShowError_WhenQueryIsEmpty()
         {
-            using var ctx = new TestContext();
+            // Arrange
+            var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
 
-            var mockRepo = new Mock<IShohinRepository>();
-            ctx.Services.AddSingleton(mockRepo.Object);
+            nav.NavigateTo("http://localhost/shohin/delete/select");
 
-            var cut = ctx.RenderComponent<ShohinDeleteSelect>(parameters => parameters.Add(p => p.q, ""));
+            // Act
+            var cut = ctx.RenderComponent<ShohinDeleteSelect>();
 
             Assert.Contains("検索条件が不正です", cut.Markup);
         }
 
         [Fact] // UT-SD-04: 削除ボタンで削除確認画面に遷移する
-        public void ShohinDeleteSelect_ShouldNavigateToDeleteConfirm()
+        public async Task ShohinDeleteSelect_ShouldNavigateToDeleteConfirm()
         {
-            using var ctx = new TestContext();
+            // Arrange
             var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
 
-            var mockRepo = new Mock<IShohinRepository>();
+            var shohinList = new List<ShohinModel>
+            {
+                new ShohinModel{ShohinCode = "A001",
+                    ShohinMeiKanji = "牛刀",
+                    ShohinMeiKana = "ぎゅうとう",
+                    Shiirene = 1500,
+                    Urine = 2900,
+                    ShiiresakiCode = "S001"
+                }
+            };
             mockRepo.Setup(r => r.SearchByKeywordAsync("牛刀"))
-                .ReturnsAsync(new List<ShohinModel>
-                {
-                new ShohinModel { ShohinCode = "A001", ShohinMeiKanji = "牛刀"}
-                });
+                .Returns(async () => { await Task.Delay(1); return shohinList; });
 
-            ctx.Services.AddSingleton(mockRepo.Object);
+            // Act
+            nav.NavigateTo("http://localhost/shohin/delete/select?q=牛刀");
 
-            var cut = ctx.RenderComponent<ShohinDeleteSelect>(parameters => parameters.Add(p => p.q, "牛刀"));
+            var cut = ctx.RenderComponent<ShohinDeleteSelect>();
 
-            cut.Find("button.btn-danger").Click();
+            // Assert
+            cut.WaitForAssertion(() =>
+            {
+                Assert.Contains("牛刀", cut.Markup);
+            }, TimeSpan.FromSeconds(1));
 
-            Assert.Equal("/shohin/delete/A001", nav.Uri);
+            await cut.Find("button.btn-danger").ClickAsync(new MouseEventArgs());
+
+            mockService.Verify(s => s.SetLastDeletedShohin(It.Is<ShohinModel>(m => m.ShohinCode == "A001")), Times.Once);
+            Assert.Contains("/shohin/delete/confirm/A001", nav.Uri);
         }
 
         [Fact] // UT-SD-05: 戻るボタンでメニューに遷移する
-        public void ShohinDeleteSeltect_ShouldNavigateBackToMenu()
+        public void ShohinDeleteConfirm_ShouldNavigateBack()
         {
-            using var ctx = new TestContext();
+            // Arrange
             var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
+            mockService.Setup(s => s.GetLastDeletedShohin()).Returns(DummyResults);
 
-            var mockRepo = new Mock<IShohinRepository>();
-            mockRepo.Setup(r => r.SearchByKeywordAsync("牛刀"))
-                .ReturnsAsync(new List<ShohinModel>());
-
-            ctx.Services.AddSingleton(mockRepo.Object);
-
-            var cut = ctx.RenderComponent<ShohinDeleteSelect>(parameters => parameters.Add(p => p.q, "牛刀"));
-
+            // Act
+            var cut = ctx.RenderComponent<ShohinDeleteConfirm>(parameters => parameters.Add(p => p.ShohinCode, DummyResults.ShohinCode));
             cut.Find("button.btn-secondary").Click();
 
-            Assert.Equal("/shohin/menu", nav.Uri);
+            // Assert
+            Assert.Equal("shohin/menu", nav.ToBaseRelativePath(nav.Uri));
         }
     }
 }

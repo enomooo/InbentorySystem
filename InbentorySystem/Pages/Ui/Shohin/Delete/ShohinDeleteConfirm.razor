@@ -2,7 +2,9 @@
 @using InbentorySystem.Data
 @using InbentorySystem.Data.Models
 @using InbentorySystem.Infrastructure.Interfaces
+@using InbentorySystem.Services.Interfaces
 @inject IShohinRepository ShohinRepo
+@inject IShohinService ShohinService
 @inject NavigationManager NavManager
 
 <PageTitle>商品削除確認: @ShohinCode</PageTitle>
@@ -79,59 +81,31 @@ else
 	[Parameter]
 	// URLから渡される商品データ（修正対象の識別子）
 	public string ShohinCode { get; set; } = string.Empty;
-	private List<ShohinModel> ShohinList { get; set; } = new();
+
 	private ShohinModel? Model { get; set; }
 	private bool IsLoading = true;
 	private string ErrorMessage = string.Empty;
 	private string DeleteErrorMessage = string.Empty;
 
 	/// <summary>
-	/// ページ初期化時に商品情報を取得
+	/// ページ初期化時にServiceから削除対象の商品情報を取得
 	/// </summary>
 	protected override async Task OnInitializedAsync()
 	{
-		await LoadDataAsync();
-	}
-
-	/// <summary>
-	/// 対象商品を取得
-	/// </summary>
-	/// <returns></returns>
-	private async Task LoadDataAsync()
-	{
 		IsLoading = true;
-		ErrorMessage = string.Empty;
 
-		if (string.IsNullOrEmpty(ShohinCode))
+		Model = ShohinService.GetLastDeletedShohin();
+
+		if (Model == null)
 		{
-			ErrorMessage = "商品コードが指定されていません。";
-			IsLoading = false;
-			return;
+			ErrorMessage = $"指定された商品コード('{ShohinCode}')の情報がサービスに見つかりませんでした。";
 		}
 
-		try
-		{
-			// GetByCodeAsyncを使ってデータを取得
-			Model = await ShohinRepo.GetByCodeAsync(ShohinCode);
-
-			if (Model == null)
-			{
-				ErrorMessage = $"商品コード'{ShohinCode}'のデータが見つかりませんでした。";
-			}
-		}
-		catch (Exception ex)
-		{
-			ErrorMessage = $"データの読み込み中にエラーが発生しました: {ex.Message}";
-		}
-		finally
-		{
-			IsLoading = false;
-		}
-
+		IsLoading = false;
 	}
 
 	/// <summary>
-	/// 商品削除を実行して成功すれば商品管理メニューへ遷移
+	/// 商品削除を実行して成功すればShohinDeleteResultへ遷移
 	/// </summary>
 	private async Task DeleteConfirmedAsync()
 	{
@@ -143,7 +117,9 @@ else
 			// ShohinRepositoryのDeleteAsyncを呼び出してDBからデータを削除
 			await ShohinRepo.DeleteAsync(Model.ShohinCode);
 
-			NavManager.NavigateTo($"/shohin/delete/result?Shohincode={ShohinCode}");
+			ShohinService.SetLastDeletedShohin(Model);
+
+			NavManager.NavigateTo($"/shohin/delete/result?Shohincode={Model.ShohinCode}");
 		}
 		catch (Exception ex)
 		{

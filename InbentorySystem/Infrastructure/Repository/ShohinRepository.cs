@@ -87,7 +87,7 @@ namespace InbentorySystem.Infrastructure.Repository
 
             using (var connection = _factory.CreateConnection())
             {
-                var param = new ShohinCodeParam(shohinCode);
+                var param = new  { shohinCode = shohinCode };
                 return await _sqlExecutor.QueryFirstOrDefaultAsync<ShohinModel>(connection, sql, param);
             }
         }
@@ -233,6 +233,7 @@ namespace InbentorySystem.Infrastructure.Repository
             var shohinSql = "DELETE FROM m_shohin WHERE shohin_code = @Code;";
 
             var param = new { Code = shohinCode };
+            int affectedRows = 0;
 
             using (var connection = _factory.CreateConnection())
             {
@@ -243,7 +244,9 @@ namespace InbentorySystem.Infrastructure.Repository
                     {
                         await _sqlExecutor.ExecuteAsync(shiireSql, param, transaction: transaction);
                         await _sqlExecutor.ExecuteAsync(zaikoSql, param, transaction: transaction);
-                        await _sqlExecutor.ExecuteAsync(shohinSql, param, transaction: transaction);
+
+                        affectedRows = await _sqlExecutor.ExecuteAsync(shohinSql, param, transaction: transaction);
+
                         transaction.Commit();
                     }
                     catch (Exception)

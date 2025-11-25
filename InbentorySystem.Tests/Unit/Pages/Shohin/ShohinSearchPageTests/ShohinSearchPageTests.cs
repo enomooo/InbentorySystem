@@ -3,98 +3,103 @@ using Bunit.TestDoubles;
 using InbentorySystem.Data.Models;
 using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Pages.Ui.Shohin;
+using InbentorySystem.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using Xunit;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace InbentorySystem.Tests.Unit.Pages.Shohin
 {
     public class ShohinSearchPageTests
     {
-        private readonly Mock<IShohinRepository> _mockRepo = new();
-        private readonly TestContext _ctx = new();
+        private readonly TestContext ctx = new();
+        private readonly Mock<IShohinRepository> mockRepo = new();
+        private readonly Mock<IShohinService> mockService = new();
+        private readonly FakeNavigationManager nav;
+
+        private readonly ShohinModel DummyShohin = new()
+        {
+            ShohinCode = "A001",
+            ShohinMeiKanji = "牛刀",
+            Urine = 3000
+        };
 
         public ShohinSearchPageTests()
         {
-            // DI登録はコンストラクタで行う
-            // ServiceContextのロックは、各テストメソッド内でctxを再初期化することで回避
-
-            _ctx.Services.AddSingleton(_mockRepo.Object);
-            // FakeNavigationManagerはTestContextが自動で提供
+            ctx.Services.AddSingleton(mockRepo.Object);
+            ctx.Services.AddSingleton(mockService.Object);
+            ctx.Services.AddSingleton<FakeNavigationManager>();
+            nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
         }
 
-        // ----------------------------------------------------------------------
-        // UT-SS-01: 検索結果が表示される (正常系)
-        // ----------------------------------------------------------------------
-        [Fact]
+        [Fact] // UT-SS-01: 検索結果が表示される (正常系)
         public async Task ShohinSearch_ShohinRenderShohinList_WhenDataIsFound()
         {
-            // Arrange: 必要なサービスを再取得（TestContextを分離して使う）
-            using var ctx = new TestContext();
-            var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
-            var mockRepo = new Mock<IShohinRepository>();
-            ctx.Services.AddSingleton(mockRepo.Object);
+            // Arrange
+            var expectedList = new List<ShohinModel> { DummyShohin };
+            var tcs = new TaskCompletionSource<List<ShohinModel>>();
 
-            var expectedData = new List<ShohinModel>
+            mockService.Setup(s => s.SearchShohinAsync("牛刀")).Returns(tcs.Task);
+
+            nav.NavigateTo("http://localhost/shohin/search?q=牛刀");
+
+            // Act1
+            var cut = ctx.RenderComponent<ShohinSearch>();
+
+            // ASSERT1 (ロード中): データが表示されていないことを確認
+            Assert.Contains("データを読み込み中です", cut.Markup);
+
+            // Act2
+            tcs.SetResult(expectedList);
+
+            cut.WaitForAssertion(() =>
             {
-                new ShohinModel { ShohinCode = "A001", ShohinMeiKanji = "牛刀", Urine = 3000 }
-            };
+                Assert.DoesNotContain("データを読み込み中です", cut.Markup);
+            }, TimeSpan.FromSeconds(3));
 
-            // データ取得にわずかな遅延をシミュレートし、非同期処理を明確にする
-            mockRepo.Setup(r => r.SearchByKeywordAsync("牛刀"))
+            await Task.Delay(10);
+
+            // ASSERT2 : データが表示されていることを検証
+            cut.WaitForAssertion(() =>
+            {
+                Assert.Contains("牛刀", cut.Markup);
+                Assert.Contains("3,000", cut.Markup);
+
+                mockService.Verify(s => s.SearchShohinAsync("牛刀"), Times.Once);
+            }, TimeSpan.FromSeconds(1));
+        }
+
+        [Fact] // UT-SS-02: 検索結果が0件なら警告表示 (データなし)
+        public async Task ShohinSearch_ShouldShowWarning_WhenNoResults()
+        {
+            // Arrange 
+            var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
+
+            mockService.Setup(r => r.SearchShohinAsync("なし"))
                 .Returns(async () =>
                 {
-                    await Task.Delay(1); // 非同期処理を保証
-                    return expectedData;
+                    await Task.Delay(1);
+                    return new List<ShohinModel>();
                 });
 
 
-            // ACT 1: クエリ q=牛刀 でナビゲートをシミュレート
-            nav.NavigateTo("/shohin/search?q=牛刀");
+            nav.NavigateTo("http://localhost/shohin/search?q=なし");
+
+            // ACT
             var cut = ctx.RenderComponent<ShohinSearch>();
 
-            // ASSERT: 非同期ロード完了を待つ (データが表示されるまで待機)
-            cut.WaitForAssertion(() =>
-            {
-                // UIにデータが反映されたことを検証
-                Assert.Contains("牛刀", cut.Markup);
-                Assert.Contains("3000", cut.Markup);
+            await Task.Delay(10);
 
-                // リポジトリが一度だけ呼ばれたことを検証
-                mockRepo.Verify(r => r.SearchByKeywordAsync("牛刀"), Times.Once);
-
-            }, TimeSpan.FromSeconds(2));
-        }
-
-        // ----------------------------------------------------------------------
-        // UT-SS-02: 検索結果が0件なら警告表示 (データなし)
-        // ----------------------------------------------------------------------
-        [Fact]
-        public async Task ShohinSearch_ShouldShowWarning_WhenNoResults()
-        {
-            using var ctx = new TestContext();
-            var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
-
-            // ARRANGE: Mock設定 - 空リストを返す
-            var mockRepo = new Mock<IShohinRepository>();
-            mockRepo.Setup(r => r.SearchByKeywordAsync("なし"))
-                .ReturnsAsync(new List<ShohinModel>()); // 空リストを返す
-            ctx.Services.AddSingleton(mockRepo.Object);
-
-            // ACT: クエリ q=なし でナビゲート
-            nav.NavigateTo("/shohin/search?q=なし");
-            var cut = ctx.RenderComponent<ShohinSearch>();
-
-            // ASSERT: 警告メッセージが表示されるのを待つ
+            // ASSERT
             cut.WaitForAssertion(() =>
             {
                 Assert.Contains("該当する商品が見つかりませんでした", cut.Markup);
+                Assert.DoesNotContain("データを読み込み中です", cut.Markup);
+
+                mockService.Verify(s => s.SearchShohinAsync("なし"), Times.Once);
             });
         }
-
-        // ... (他のテストも同様に async Task と await を使って修正) ...
     }
 }
