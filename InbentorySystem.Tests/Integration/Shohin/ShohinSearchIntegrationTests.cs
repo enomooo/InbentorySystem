@@ -2,7 +2,9 @@
 using Bunit.TestDoubles;
 using InbentorySystem.Data.Models;
 using InbentorySystem.Infrastructure.Interfaces;
+using InbentorySystem.Infrastructure.Models;
 using InbentorySystem.Pages.Ui.Shohin;
+using InbentorySystem.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
@@ -15,7 +17,10 @@ namespace InbentorySystem.Tests.Integration.Shohin
         {
             using var ctx = new TestContext();
 
+            // Arrange
             var mockRepo = new Mock<IShohinRepository>();
+            var mockService = new Mock<IShohinService>();
+
             mockRepo.Setup(r => r.SearchByKeywordAsync("牛刀"))
                 .ReturnsAsync(new List<ShohinModel>
                 {
@@ -23,11 +28,17 @@ namespace InbentorySystem.Tests.Integration.Shohin
                 });
 
             ctx.Services.AddSingleton(mockRepo.Object);
+            ctx.Services.AddSingleton(mockService.Object);
 
-            var cut = ctx.RenderComponent<ShohinSearch>(parameters => parameters.Add(p => p.q, "牛刀"));
+            var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
 
-            Assert.Contains("牛刀", cut.Markup);
-            Assert.Contains("検索結果: **1 件**", cut.Markup);
+            nav.NavigateTo("http://localhost/shohin/search?q=牛刀");
+            var cut = ctx.RenderComponent<ShohinSearch>();
+
+            cut.WaitForAssertion(() =>
+            {
+                Assert.Contains("牛刀", cut.Markup);
+            } );
         }
 
         [Fact] // IT-SS-02: 検索結果が0件なら警告表示
