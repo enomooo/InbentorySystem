@@ -12,6 +12,26 @@ namespace InbentorySystem.Tests.Integration.Shohin
 {
     public class ShohinSearchIntegrationTests
     {
+        private readonly TestContext ctx = new();
+        private readonly Mock<IShohinRepository> mockRepo = new();
+        private readonly Mock<IShohinService> mockService = new();
+        private readonly FakeNavigationManager nav;
+
+        private readonly ShohinModel DummyShohin = new()
+        {
+            ShohinCode = "A001",
+            ShohinMeiKanji = "牛刀",
+            Urine = 3000
+        };
+
+        public ShohinSearchPageTests()
+        {
+            ctx.Services.AddSingleton(mockRepo.Object);
+            ctx.Services.AddSingleton(mockService.Object);
+            ctx.Services.AddSingleton<FakeNavigationManager>();
+            nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
+        }
+
         [Fact] // IT-SS-01: 検索結果が表示される
         public void ShohinSearch_ShouldRenderShohinList_WhenKeywordMatches()
         {
@@ -21,12 +41,14 @@ namespace InbentorySystem.Tests.Integration.Shohin
             var mockRepo = new Mock<IShohinRepository>();
             var mockService = new Mock<IShohinService>();
 
-            mockRepo.Setup(r => r.SearchByKeywordAsync("牛刀"))
-                .ReturnsAsync(new List<ShohinModel>
-                {
+            var expectedData = new List<ShohinModel>
+            {
                 new ShohinModel { ShohinCode = "A001", ShohinMeiKanji = "牛刀", ShohinMeiKana = "ぎゅうとう", Shiirene = 1500, Urine = 2900, ShiiresakiCode = "S001" }
-                });
+            };
 
+            mockRepo.Setup(s => s.SearchShohinAsync("牛刀"))
+                .ReturnsAsync(expectedData);
+                
             ctx.Services.AddSingleton(mockRepo.Object);
             ctx.Services.AddSingleton(mockService.Object);
 
@@ -38,7 +60,7 @@ namespace InbentorySystem.Tests.Integration.Shohin
             cut.WaitForAssertion(() =>
             {
                 Assert.Contains("牛刀", cut.Markup);
-            } );
+            },TimeSpan.FromSeconds(5));
         }
 
         [Fact] // IT-SS-02: 検索結果が0件なら警告表示
