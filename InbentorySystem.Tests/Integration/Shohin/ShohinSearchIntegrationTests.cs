@@ -2,6 +2,7 @@
 using Bunit.TestDoubles;
 using InbentorySystem.Data.Models;
 using InbentorySystem.Infrastructure.Interfaces;
+using InbentorySystem.Infrastructure.Models;
 using InbentorySystem.Pages.Ui.Shohin;
 using InbentorySystem.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;

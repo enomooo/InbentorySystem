@@ -14,6 +14,14 @@ namespace InbentorySystem.Tests.Integration.Shohin
 {
     public class ShohinMenuIntegrationTests
     {
+        private readonly ShohinModel resultShohin = new ShohinModel
+        {
+            ShohinCode = "A001",
+            ShohinMeiKanji = "牛刀",
+            Shiirene = 1500,
+            Urine = 3000
+        };
+
         [Fact] // IT-SM-01: 商品登録フォームで登録処理が呼ばれる
         public async Task ShohinMenu_ShouldRegisterShohin_WhenFormSubmitted()
         {
@@ -91,6 +99,7 @@ namespace InbentorySystem.Tests.Integration.Shohin
         {
             using var ctx = new TestContext();
 
+            //Arrange
             var mockRepo = new Mock<IShohinRepository>();
             var mockService = new Mock<IShohinService>();
             var mockShiiresakiRepo = new Mock<IShiiresakiRepository>();
@@ -99,8 +108,9 @@ namespace InbentorySystem.Tests.Integration.Shohin
             mockRepo.Setup(r => r.SearchByKeywordAsync("牛刀"))
                .ReturnsAsync(new List<ShohinModel> { new ShohinModel { ShohinMeiKanji = "牛刀" } });
 
-            mockShiiresakiRepo.Setup(r => r.GetAllAsync())
-       .Returns(async () => { await Task.Delay(1); return shiiresakiData; });
+            mockService.SetupProperty(s => s.LastEditedShohin);
+            mockService.Setup(s => s.SetLastEditedShohin(It.IsAny<ShohinModel>()));
+            mockShiiresakiRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<ShiiresakiModel>());
 
             ctx.Services.AddSingleton(mockRepo.Object);
             ctx.Services.AddSingleton(mockService.Object);
@@ -125,17 +135,11 @@ namespace InbentorySystem.Tests.Integration.Shohin
         {
             using var ctx = new TestContext();
 
-            // Arrange
             var mockRepo = new Mock<IShohinRepository>();
-            var mockService = new Mock<IShohinService>();
-            var mockShiiresakiRepo = new Mock<IShiiresakiRepository>();
-            var shiiresakiData = new List<ShiiresakiModel>();
-
             mockRepo.Setup(r => r.SearchByKeywordAsync("牛刀"))
-                .ReturnsAsync(new List<ShohinModel> { new ShohinModel { ShohinMeiKanji = "牛刀" } });
+                               .ReturnsAsync(new List<ShohinModel> { resultShohin });
 
-            mockShiiresakiRepo.Setup(r => r.GetAllAsync())
-      .Returns(async () => { await Task.Delay(1); return shiiresakiData; });
+            var mockService = new Mock<IShohinService>();
 
             ctx.Services.AddSingleton(mockRepo.Object);
             ctx.Services.AddSingleton(mockService.Object);
@@ -149,8 +153,8 @@ namespace InbentorySystem.Tests.Integration.Shohin
 ;
             cut.Render();
 
-            cut.Find("input[id=deleteKeyword]").Change("牛刀");
-            await cut.FindAll("button").First(b => b.TextContent.Contains("削除画面へ")).ClickAsync(new MouseEventArgs());
+            cut.Find("input[id=editKeyword]").Change("牛刀");
+            cut.FindAll("button").First(b => b.TextContent.Contains("削除画面へ")).Click();
 
             Assert.Contains("/shohin/delete/select", nav.Uri);
         }
