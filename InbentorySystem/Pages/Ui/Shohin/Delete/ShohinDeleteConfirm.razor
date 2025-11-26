@@ -93,6 +93,7 @@ else
 	protected override async Task OnInitializedAsync()
 	{
 		IsLoading = true;
+		ErrorMessage = string.Empty;
 
 		Model = ShohinService.GetLastDeletedShohin();
 
@@ -102,6 +103,7 @@ else
 		}
 
 		IsLoading = false;
+		await Task.CompletedTask;
 	}
 
 	/// <summary>

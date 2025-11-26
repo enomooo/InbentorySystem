@@ -8,6 +8,7 @@
 @inject IShiireRepository ShiireRepo
 @inject IShiiresakiRepository ShiiresakiRepo
 @inject IShiireService _shiireService
+@inject IZaikoService ZaikoService
 @inject NavigationManager NavManager
 
 
@@ -33,12 +34,12 @@ else if (OriginalShiire == null)
 else
 {
 	<div class="card p-4 shadow-sm">
-		<h2 class="card-title">修正対象: @EditShiire.ShiireBi - @EditShiire.ShohinCode</h2>
+		<h2 class="card-title">修正対象: @EditShiire!.ShiireBi?.ToString("yyyy-MM-dd") - @EditShiire!.ShohinCode</h2>
 
 		<h4 class="mt-4">修正前の仕入伝票情報</h4>
 		<table class="table table-sm table-bordered">
 			<tbody>
-				<tr><th>仕入日付</th><td>@OriginalShiire.ShiireBi</td></tr>
+				<tr><th>仕入日付</th><td>@OriginalShiire.ShiireBi?.ToString("yyyy-MM-dd")</td></tr>
 				<tr><th>仕入先コード</th><td>@OriginalShiire.ShiiresakiCode</td></tr>
 				<tr><th>数量</th><td>@OriginalShiire.Quantity</td></tr>
 			</tbody>
@@ -55,10 +56,10 @@ else
 			<div class="row mb-3">
 				<label for="ShiireBi" class="col-sm-3 col-form-label">仕入日付</label>
 				<div class="col-sm-5">
-					<InputText id="ShiireBi"
+					<InputDate id="ShiireBi"
 								@bind-Value="EditShiire.ShiireBi"
 								class="form-control"
-								placeholder="YYYY-MM-DD" />
+								 />
 					<ValidationMessage For="@(() => EditShiire.ShiireBi)" />
 				</div>
 			</div>
@@ -98,7 +99,7 @@ else
 	private bool IsLoading { get; set; } = true;
 	private string ErrorMessage { get; set; } = string.Empty;
 
-	private ShiireModel? EditShiire { get; set; }
+	 private ShiireModel? EditShiire { get; set; }
 	private ShiireModel? OriginalShiire { get; set; }
 
 	private List<ShiiresakiModel> ShiiresakiList { get; set; } = new();
@@ -153,13 +154,14 @@ else
 
 	private async Task UpdateShiireAsync()
 	{
-
-		if (EditShiire == null) return;
+		if (EditShiire == null || OriginalShiire == null) return;
 
 		try
 		{
+			int beforeZaiko = await ZaikoService.GetCurrentQuantityAsync(OriginalShiire.ShohinCode);
 			await ShiireRepo.UpdateAsync(EditShiire);
-			_shiireService.SetLastEditedShiire(EditShiire);
+			int afterZaiko = await ZaikoService.GetCurrentQuantityAsync(EditShiire.ShohinCode);
+			_shiireService.SetLastEditResults(OriginalShiire, EditShiire, beforeZaiko, afterZaiko);
 			NavManager.NavigateTo("/shiire/edit/result", forceLoad: true);
 		}
 
@@ -183,6 +185,7 @@ else
 				ShiireBi = OriginalShiire.ShiireBi,
 				ShohinCode = OriginalShiire.ShohinCode,
 				ShiiresakiCode = OriginalShiire.ShiiresakiCode,
+				Quantity = OriginalShiire.Quantity,
 				Shiirene = OriginalShiire.Shiirene
 			};
 		}

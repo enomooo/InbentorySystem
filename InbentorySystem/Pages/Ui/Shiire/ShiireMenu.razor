@@ -68,12 +68,11 @@
 			<div class="row mb-3">
 				<label for="ShiireBi" class="col-sm-3 col-form-label">仕入日付(YYYY-MM-DD)</label>
 				<div class="col-sm-5">
-					<input id="ShiireBi" type="text" class="form-control"
-						   @bind="NewShiireModel.ShiireBi"
-						   @bind:event="oninput" />
+					<InputDate id="ShiireBi" @bind-Value="NewShiireModel.ShiireBi" class="form-control"/>
 					<ValidationMessage For="@(() => NewShiireModel.ShiireBi)" />
 				</div>
 			</div>
+	
 			<div class="row mb-3">
 				<label for="ShohinCode" class="col-sm-3 col-form-label">商品コード</label>
 				<div class="col-sm-5">
@@ -383,9 +382,9 @@
 	/// <param name="date">入力された仕入日付</param>
 	/// <param name="shohinCode">入力された商品コード</param>
 	/// <returns></returns>
-	private async Task SearchForEdit(string? dateString, string? shohinCode)
+	private async Task SearchForEdit(DateTime? date, string? shohinCode)
 	{
-		if (string.IsNullOrWhiteSpace(dateString) || string.IsNullOrEmpty(shohinCode))
+		if (!date.HasValue || string.IsNullOrEmpty(shohinCode))
 		{
 			Message = "入力項目が不足しています";
 			IsError = true;
@@ -393,15 +392,7 @@
 			return;
 		}
 
-		if (!DateTime.TryParse(dateString, out DateTime parseddate))
-		{
-			Message = "仕入日付の形式が正しくありません (YYYY-MM-DD形式で入力してください)";
-			IsError = true;
-			StateHasChanged();
-			return;
-		}
-
-		var results = await ShiireRepository.SearchByDateAsync(parseddate, shohinCode);
+		var results = await ShiireRepository.SearchByDateAsync(date.Value, shohinCode);
 
 		if (results == null || results.Count == 0)
 		{
@@ -432,28 +423,22 @@
 	/// <param name="date">入力された仕入日付</param>
 	/// <param name="shohinCode">商品コード</param>
 	/// <returns></returns>
-	private async Task SearchForDelete(string? dateString, string shohinCode)
+	private async Task SearchForDelete(DateTime? date, string? shohinCode)
 	{
-		if (string.IsNullOrWhiteSpace(dateString) || string.IsNullOrWhiteSpace(shohinCode))
+		if (!date.HasValue || string.IsNullOrEmpty(shohinCode))
 		{
 			Message = "入力項目が不足しています";
-			IsError = true;
-			return;
-		}
-
-		if (!DateTime.TryParse(dateString, out DateTime parseddate))
-		{
-			Message = "仕入日付の形式が正しくありません(YYYY-MM-DD形式で入力してください)";
 			IsError = true;
 			StateHasChanged();
 			return;
 		}
 
-		var results = await ShiireRepository.SearchByDateAsync(parseddate, shohinCode);
+		var results = await ShiireRepository.SearchByDateAsync(date.Value, shohinCode);
 
 		if (results == null || results.Count == 0)
 		{
 			Message = "該当する仕入はありませんでした";
+			StateHasChanged();
 			return;
 		}
 

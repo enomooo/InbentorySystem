@@ -143,7 +143,6 @@ namespace InbentorySystem.Tests.Integration.Shohin
 
             ctx.Services.AddSingleton(mockRepo.Object);
             ctx.Services.AddSingleton(mockService.Object);
-            ctx.Services.AddSingleton(mockShiiresakiRepo.Object);
             ctx.Services.AddSingleton<FakeNavigationManager>();
 
             var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();

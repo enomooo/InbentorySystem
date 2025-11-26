@@ -26,4 +26,8 @@
     <ProjectReference Include="..\InbentorySystem\InbentorySystem.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Unit\Pages\Shiire\" />
+  </ItemGroup>
+
 </Project>
