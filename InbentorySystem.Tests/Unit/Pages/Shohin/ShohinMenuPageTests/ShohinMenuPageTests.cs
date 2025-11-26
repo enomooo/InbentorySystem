@@ -207,7 +207,7 @@ namespace InbentorySystem.Tests.Unit.Pages.Shohin.ShohinIndexPageTexts
             // Act
             var cut = ctx.RenderComponent<ShohinMenu>();
 
-           await Task.Delay(50);
+
             cut.Render();
 
             cut.Find("input[id=editKeyword]").Change("牛刀");

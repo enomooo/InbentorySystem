@@ -1,0 +1,135 @@
+﻿@page "/shiire/delete/confirm"
+@using InbentorySystem.Data.Models
+@using InbentorySystem.Infrastructure.Interfaces
+@using InbentorySystem.Services.Interfaces
+@inject IShiireRepository ShiireRepo
+@inject IShiireService ShiireService
+@inject NavigationManager NavManager
+
+<PageTitle>仕入削除確認</PageTitle>
+
+<h1>仕入削除確認</h1>
+
+<button class="btn btn-secondary mb-3" @onclick="GoBack">
+	<span class="pointer-event oi-arrow-left"></span>選択画面へ戻る
+</button>
+
+@if (IsLoading)
+{
+	<p><em>データを読み込み中です...</em></p>
+}
+else if (!string.IsNullOrEmpty(ErrorMessage))
+{
+	<div class="alert alert-danger">@ErrorMessage</div>
+}
+else if (Model == null)
+{
+	<div class="alert alert-warning">削除対象の仕入伝票が見つかりませんでした。</div>
+}
+else
+{
+	<div class="card p-4 mb-4">
+		<h2>削除画面</h2>
+		<table class="table table-bordered table-striped">
+			<thead>
+				<tr>
+					<th>仕入番号</th>
+					<th>仕入日</th>
+					<th>商品コード</th>
+					<th>仕入先コード</th>
+					<th class="text-end">数量</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>@Model.ShiireNo</td>
+					<td>@Model.ShiireBi?.ToString("yyyy-MM-dd")</td>
+					<td>@Model.ShohinCode</td>
+					<td>@Model.ShiiresakiCode</td>
+					<td class="text-end">@Model.Quantity?.ToString("N0")</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<div class="alert alert-danger">
+			<h2>削除ボタンを押すと元に戻りませんが</h2>
+			<h2>本当に削除しますがよろしいですか？</h2>
+			<h2>キャンセルは仕入管理メニューに戻るを押してください</h2>
+		</div>
+
+		<button class="btn btn-danger mt-3" @onclick="DeleteConfirmedAsync">
+			<span class="oi oi-trash">削除</span>
+		</button>
+
+		@if (!string.IsNullOrEmpty(DeleteErrorMessage))
+		{
+			<div class="alert alert-danger mt-3">@DeleteErrorMessage</div>
+		}
+	</div>
+	<button class="btn btn-secondary w-100 mb-3" @onclick="GoBack">
+		<span class="pointer-event oi-arrow-left"></span>仕入管理メニューへ戻る
+	</button>
+}
+
+@code {
+	private ShiireModel? Model { get; set; }
+	private bool IsLoading = true;
+	private string ErrorMessage = string.Empty;
+	private string DeleteErrorMessage = string.Empty;
+
+	protected override void OnInitialized()
+	{
+		IsLoading = true;
+		ErrorMessage = string.Empty;
+
+		Model = ShiireService.LastDeletedShiire;
+
+		if (Model == null)
+		{
+			ErrorMessage = "削除対象の情報がサービスに見つかりませんでした。";
+		}
+		IsLoading = false;
+	}
+
+	private async Task DeleteConfirmedAsync()
+	{
+		if (Model == null || !Model.ShiireBi.HasValue || !Model.Quantity.HasValue) return;
+
+		DeleteErrorMessage = string.Empty;
+		try
+		{
+			int affectedRows = await ShiireRepo.DeleteAsync(
+			Model.ShiireBi.Value.Date,
+			Model.ShohinCode,
+			Model.Quantity.Value
+			);
+
+			if (affectedRows > 0)
+			{
+				NavManager.NavigateTo("/shiire/delete/result");
+			}
+			else
+			{
+				DeleteErrorMessage = "該当する仕入伝票が見つかりませんでした。";
+			}
+		}
+		catch (InvalidOperationException ex)
+		{
+			DeleteErrorMessage = ex.Message;
+		}
+
+		catch (Exception ex)
+		{
+			DeleteErrorMessage = $"削除中にシステムエラーが発生しました:{ex.Message}";
+		}
+	}
+
+	/// <summary>
+	/// 仕入管理メニューに戻る
+	/// </summary>
+	private void GoBack()
+	{
+		NavManager.NavigateTo("/shiire/menu");
+	}
+}
+

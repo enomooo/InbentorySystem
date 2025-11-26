@@ -81,10 +81,15 @@ else
             return;
         }
 
+        if (!Target.ShiireBi.HasValue)
+        {
+            return;
+        }
+
         var beforeQuantity = Target.Quantity;
 
         var result = await ShiireRepository.DeleteAsync(
-            Target.ShiireBi,
+            Target.ShiireBi.Value.Date,
             Target.ShohinCode,
             Target.Quantity.Value);
 

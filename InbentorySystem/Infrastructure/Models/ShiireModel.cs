@@ -12,7 +12,7 @@
         /// 仕入年月日(画面のテキストボックスからのテキスト入力のためstring)
         /// DB上はDate型
         /// </summary>
-        public string? ShiireBi { get; set; }
+        public DateTime? ShiireBi { get; set; }
 
         /// <summary>
         /// 商品コード

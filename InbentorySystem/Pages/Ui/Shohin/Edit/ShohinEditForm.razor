@@ -157,7 +157,14 @@
 	{
 		if (EditModel != null)
 		{
-			NewModel = Clone(EditModel);
+			if (EditModel != null)
+			{
+				NewModel = Clone(EditModel);
+			}
+			else
+			{
+				
+			}
 		}
 	}
 

@@ -67,7 +67,7 @@ else
 	/// <param name="model"></param>
 	private void Edit(ShiireModel model)
 	{
-		string dateStr = model.ShiireBi ?? string.Empty;
+		string dateStr = model.ShiireBi?.ToString("yyyy-MM-dd") ?? string.Empty;
 		string code = Uri.EscapeDataString(model.ShohinCode);
 
 		ShiireService.SetLastEditedShiire(model);

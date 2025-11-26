@@ -10,7 +10,7 @@ namespace InbentorySystem.Services
     /// </summary>
     public class ShiireService : IShiireService
     {
-  
+
         // 最後に検索した商品コードキーワード（検索条件の記録用）
         public string? LastCodeKeyword { get; private set; }
 
@@ -19,7 +19,9 @@ namespace InbentorySystem.Services
 
         // 最後に修正された仕入データ
         public ShiireModel? LastEditedShiire { get; private set; }
-
+        public int? LastEditBeforeZaikoQuantity { get; private set; }
+        public int? LastEditAfterZaikoQuantity { get; private set; }
+        public ShiireModel? LastEditOriginalShiire { get; private set; }
         // 最後に削除された仕入データ
         public ShiireModel? LastDeletedShiire { get; private set; }
 
@@ -89,6 +91,19 @@ namespace InbentorySystem.Services
             LastEditedShiire = model;
         }
 
+        /// <summary>
+        /// 修正前後のデータ
+        /// </summary>
+        /// <param name="before">修正前のデータ</param>
+        /// <param name="after">修正後のデータ</param>
+        public void SetLastEditResults(ShiireModel original, ShiireModel updated, int beforeZaiko, int afterZaiko)
+        {
+            LastEditOriginalShiire = original;
+            LastEditedShiire = updated;
+            LastEditBeforeZaikoQuantity = beforeZaiko;
+            LastEditAfterZaikoQuantity = afterZaiko;
+        }
+
         public ShiireModel? GetLastEditedShiire()
         {
             return LastEditedShiire;
@@ -124,6 +139,10 @@ namespace InbentorySystem.Services
             LastRegisteredShiire = null;
             LastEditedShiire = null;
             LastDeletedShiire = null;
+
+            LastEditAfterZaikoQuantity = null;
+            LastEditBeforeZaikoQuantity = null;
+            LastEditOriginalShiire = null;
         }
     }
 }

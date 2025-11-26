@@ -160,7 +160,7 @@
 		<div class="row mb-3">
 			<label for="deleteDate" class="col-sm-3 col-form-label">仕入日付(YYYY-MM-DD)</label>
 			<div class="col-sm-5">
-				<input id="deleteDate" type="text" class="form-control" @bind="DeleteShiireDate" />
+				<input id="deleteDate" type="date" class="form-control" @bind="DeleteShiireDate" />
 			</div>
 		</div>
 		<div class="row mb-3">
@@ -200,11 +200,11 @@
 	private string? RegisterErrorMessage { get; set; }
 
 	// 修正用
-	private string? EditShiireDate { get; set; }
+	private DateTime? EditShiireDate { get; set; }
 	private string EditShohinCode { get; set; } = string.Empty;
 
 	// 削除用
-	private string? DeleteShiireDate { get; set; }
+	private DateTime? DeleteShiireDate { get; set; }
 	private string DeleteShohinCode { get; set; } = string.Empty;
 
 	/// <summary>
@@ -328,7 +328,7 @@
 
 		try
 		{
-			if (string.IsNullOrWhiteSpace(NewShiireModel.ShiireBi))
+			if (!NewShiireModel.ShiireBi.HasValue)
 			{
 				RegisterErrorMessage = "仕入日付を入力してください。";
 				return;

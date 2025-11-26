@@ -1,0 +1,101 @@
+﻿@page "/shiire/edit/result"
+@using InbentorySystem.Data.Models
+@using InbentorySystem.Services.Interfaces
+@inject IShiireService ShiireService
+@inject NavigationManager NavManager
+
+<PageTitle>仕入修正結果</PageTitle>
+
+<h1>仕入修正結果</h1>
+
+@{
+	var updatedShiire = ShiireService.LastEditedShiire;
+	var beforeZaiko = ShiireService.LastEditBeforeZaikoQuantity;
+	var afterZaiko = ShiireService.LastEditAfterZaikoQuantity;
+
+	if (updatedShiire == null)
+	{
+		<div class="alert alert-warning">
+			修正された仕入情報が見つかりません。<a href="/shiire/menu">仕入管理メニューに戻る</a>
+		</div>
+	}
+	else
+	{
+		<div class="alert alert-success p-4 shadow-sm mb-4">
+			<p class="h4 text-success">以下の仕入を修正しました。</p>
+		</div>
+
+		<div class="card p-4 mb-4">
+			<h3>仕入テーブル</h3>
+			@RenderShiireTable(updatedShiire)
+		</div>
+		<div class="alert alert-success p-4 shadow-sm mb-4">
+			<p class="h4 text-success">以下の在庫を更新しました。</p>
+		</div>
+
+		<div class="card p-4 mb-4">
+			<h3>在庫テーブル</h3>
+			@RenderZaikoUpdate(updatedShiire.ShohinCode, beforeZaiko, afterZaiko)
+		</div>
+
+		<button class="btn btn-secondary w-100 mt-4" @onclick="GoBack">
+			仕入管理メニューに戻る
+		</button>
+	}
+}
+
+@code {
+
+	/// <summary>
+	/// 仕入テーブル表示用ヘルパーメソッド
+	/// </summary>
+	private RenderFragment RenderShiireTable(ShiireModel shiire) =>@<table class="table table-bordered table-sm">
+	<thead class="thead-dark">
+		<tr>
+			<th>仕入番号</th>
+			<th>仕入日付</th>
+			<th>商品コード</th>
+			<th>仕入先コード</th>
+			<th class="text-end">数量</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>@shiire.ShiireNo</td>
+			<td>@shiire.ShiireBi</td>
+			<td>@shiire.ShohinCode</td>
+			<td>@shiire.ShiiresakiCode</td>
+			<td class="text-end">@shiire.Quantity?.ToString("N0")</td>
+		</tr>
+	</tbody>
+</table>;
+
+	/// <summary>
+	/// 在庫更新表示用ヘルパーメソッド
+	/// </summary>
+	private RenderFragment RenderZaikoUpdate(string shohinCode, int? before, int? after) =>@<table class="table table-bordered table-sm">
+		<thead class="table-light">
+			<tr>
+				<th>商品コード</th>
+				<th>変更前の在庫数量</th>
+				<th>変更後の在庫数量</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>@shohinCode</td>
+				<td class="text-end">@(before.HasValue? before.Value.ToString("N0") : "データなし")</td>
+				<td class="text-end">@(after.HasValue? after.Value.ToString("N0") : "データなし")</td>
+			</tr>
+		</tbody>
+	</table>;
+
+	/// <summary>
+	/// 仕入管理メニュー画面に戻る処理
+	/// </summary>
+	private void GoBack()
+	{
+		ShiireService.Clear();
+		NavManager.NavigateTo("/shohin/menu");
+	}
+}

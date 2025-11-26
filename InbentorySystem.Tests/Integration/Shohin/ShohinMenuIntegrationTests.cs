@@ -97,11 +97,10 @@ namespace InbentorySystem.Tests.Integration.Shohin
             var shiiresakiData = new List<ShiiresakiModel> { new ShiiresakiModel { ShiiresakiCode = "S001" } };
 
             mockRepo.Setup(r => r.SearchByKeywordAsync("牛刀"))
-                    .ReturnsAsync(new List<ShohinModel> { resultShohin });
+               .ReturnsAsync(new List<ShohinModel> { new ShohinModel { ShohinMeiKanji = "牛刀" } });
 
-            mockService.SetupProperty(s => s.LastEditedShohin);
-            mockService.Setup(s => s.SetLastEditedShohin(It.IsAny<ShohinModel>()));
-            mockShiiresakiRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<ShiiresakiModel>());
+            mockShiiresakiRepo.Setup(r => r.GetAllAsync())
+       .Returns(async () => { await Task.Delay(1); return shiiresakiData; });
 
             ctx.Services.AddSingleton(mockRepo.Object);
             ctx.Services.AddSingleton(mockService.Object);
@@ -112,33 +111,46 @@ namespace InbentorySystem.Tests.Integration.Shohin
 
             var cut = ctx.RenderComponent<ShohinMenu>();
 
-            cut.WaitForAssertion(() => cut.Instance.ShiiresakiList.Any(),TimeSpan.FromSeconds(2));
+            cut.Render();
+
             cut.Find("input[id=editKeyword]").Change("牛刀");
-            
+
             await cut.FindAll("button").First(b => b.TextContent.Contains("修正画面へ")).ClickAsync(new MouseEventArgs());
 
             Assert.Contains("/shohin/edit/select", nav.Uri);
         }
 
         [Fact] // IT-SM-04: 削除キーワード入力 -> 削除画面に遷移
-        public void ShohinMenu_ShouldNavigateToDeleteSelect_WhenDeleteKeywordEntered()
+        public async Task ShohinMenu_ShouldNavigateToDeleteSelect_WhenDeleteKeywordEntered()
         {
             using var ctx = new TestContext();
-            var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
 
+            // Arrange
             var mockRepo = new Mock<IShohinRepository>();
+            var mockService = new Mock<IShohinService>();
+            var mockShiiresakiRepo = new Mock<IShiiresakiRepository>();
+            var shiiresakiData = new List<ShiiresakiModel>();
+
             mockRepo.Setup(r => r.SearchByKeywordAsync("牛刀"))
                 .ReturnsAsync(new List<ShohinModel> { new ShohinModel { ShohinMeiKanji = "牛刀" } });
 
-            var mockService = new Mock<IShohinService>();
+            mockShiiresakiRepo.Setup(r => r.GetAllAsync())
+      .Returns(async () => { await Task.Delay(1); return shiiresakiData; });
 
             ctx.Services.AddSingleton(mockRepo.Object);
             ctx.Services.AddSingleton(mockService.Object);
+            ctx.Services.AddSingleton(mockShiiresakiRepo.Object);
+            ctx.Services.AddSingleton<FakeNavigationManager>();
 
+            var nav = ctx.Services.GetRequiredService<FakeNavigationManager>();
+
+            // Act
             var cut = ctx.RenderComponent<ShohinMenu>();
+;
+            cut.Render();
 
-            cut.Find("input[id=editKeyword]").Change("牛刀");
-            cut.FindAll("button").First(b => b.TextContent.Contains("削除画面へ")).Click();
+            cut.Find("input[id=deleteKeyword]").Change("牛刀");
+            await cut.FindAll("button").First(b => b.TextContent.Contains("削除画面へ")).ClickAsync(new MouseEventArgs());
 
             Assert.Contains("/shohin/delete/select", nav.Uri);
         }

@@ -38,7 +38,7 @@ namespace InbentorySystem.Infrastructure.Interfaces
         /// <param name="date">仕入日付</param>
         /// <param name="code">商品コード</param>
         /// <returns>該当する仕入モデル（存在しない場合はnull）</returns>
-        Task<ShiireModel?> GetByDateAndCodeAsync(string date, string code);
+        Task<ShiireModel?> GetByDateAndCodeAsync(DateTime date, string code);
 
         /// <summary>
         /// 修正処理（仕入伝票＋在庫調整）
@@ -54,6 +54,6 @@ namespace InbentorySystem.Infrastructure.Interfaces
         /// <param name="code">商品コード</param>
         /// <param name="quantity">削除対象数量</param>
         /// <returns>影響を受けた行数</returns>
-        Task<int> DeleteAsync(string date, string code, int quantity);
+        Task<int> DeleteAsync(DateTime date, string code, int quantity);
     }
 }

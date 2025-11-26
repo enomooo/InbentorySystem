@@ -12,6 +12,10 @@ namespace InbentorySystem.Services.Interfaces
         ShiireModel? LastEditedShiire { get; }
         ShiireModel? LastDeletedShiire { get; }
 
+        public int? LastEditBeforeZaikoQuantity { get; }
+        public int? LastEditAfterZaikoQuantity { get; }
+
+        void SetLastEditResults(ShiireModel original, ShiireModel updated, int beforeZaiko, int afterZaiko);
         string? DetermineNavigationUri(string dateFrom, string codeKeyword, List<ShiireModel> results, string actionType);
         void SetShiireList(List<ShiireModel> list);
         List<ShiireModel> GetShiireList();

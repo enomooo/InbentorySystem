@@ -53,9 +53,13 @@ else
 			<ValidationSummary />
 
 			<div class="row mb-3">
-				<label for="ShiireBi" class="col-sm-3 col-form-label">仕入日付（変更不可）</label>
+				<label for="ShiireBi" class="col-sm-3 col-form-label">仕入日付</label>
 				<div class="col-sm-5">
-					<InputText id="ShiireBi" @bind-Value="EditShiire.ShiireBi" class="form-control" Disabled />
+					<InputText id="ShiireBi"
+								@bind-Value="EditShiire.ShiireBi"
+								class="form-control"
+								placeholder="YYYY-MM-DD" />
+					<ValidationMessage For="@(() => EditShiire.ShiireBi)" />
 				</div>
 			</div>
 
@@ -78,6 +82,10 @@ else
 					<InputNumber id="Quantity" @bind-Value="EditShiire.Quantity" class="form-control" />
 					<ValidationMessage For="@(() => EditShiire.Quantity)" />
 				</div>
+				<div class="d-flex gap-3 mt-4">
+					<button type="submit" class="btn btn-primary">修正を保存</button>
+					<button type="button" class="btn btn-outline-secondary" @onclick="ResetForm">リセット</button>
+				</div>
 			</div>
 		</EditForm>
 	</div>
@@ -90,7 +98,7 @@ else
 	private bool IsLoading { get; set; } = true;
 	private string ErrorMessage { get; set; } = string.Empty;
 
-	private ShiireModel? EditShiire { get; set; } 
+	private ShiireModel? EditShiire { get; set; }
 	private ShiireModel? OriginalShiire { get; set; }
 
 	private List<ShiiresakiModel> ShiiresakiList { get; set; } = new();
@@ -103,10 +111,6 @@ else
 	{
 		await LoadRequiredDataAsync();
 	}
-
-
-
-
 
 	private async Task LoadRequiredDataAsync()
 	{
@@ -122,19 +126,18 @@ else
 				return;
 			}
 
-			else
-			{
-				EditShiire = new ShiireModel
-				{
-					ShiireBi = original.ShiireBi,
-					ShohinCode = original.ShohinCode,
-					ShiiresakiCode = original.ShiiresakiCode,
-					Quantity = original.Quantity,
-					Shiirene = original.Shiirene
-				};
+			OriginalShiire = original;
 
-				ShiiresakiList = await ShiiresakiRepo.GetAllAsync();
-			}
+			EditShiire = new ShiireModel
+			{
+				ShiireBi = original.ShiireBi,
+				ShohinCode = original.ShohinCode,
+				ShiiresakiCode = original.ShiiresakiCode,
+				Quantity = original.Quantity,
+				Shiirene = original.Shiirene
+			};
+
+			ShiiresakiList = await ShiiresakiRepo.GetAllAsync();
 		}
 
 		catch (Exception ex)
@@ -152,7 +155,7 @@ else
 	{
 
 		if (EditShiire == null) return;
-		
+
 		try
 		{
 			await ShiireRepo.UpdateAsync(EditShiire);
@@ -173,17 +176,14 @@ else
 
 	private void ResetForm()
 	{
-		var original = _shiireService.GetLastEditedShiire();
-		if (original != null)
+		if (OriginalShiire != null)
 		{
 			EditShiire = new ShiireModel
 			{
-				ShiireBi = string.Empty,
-				ShohinCode = string.Empty,
-				ShiiresakiCode = string.Empty,
-				Quantity = null,
-				// todo: 仕入値空白の仕方を考える
-				Shiirene = original.Shiirene
+				ShiireBi = OriginalShiire.ShiireBi,
+				ShohinCode = OriginalShiire.ShohinCode,
+				ShiiresakiCode = OriginalShiire.ShiiresakiCode,
+				Shiirene = OriginalShiire.Shiirene
 			};
 		}
 		ErrorMessage = string.Empty;

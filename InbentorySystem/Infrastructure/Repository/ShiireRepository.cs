@@ -1,8 +1,10 @@
 ﻿using Dapper;
-using InbentorySystem.Infrastructure.Interfaces;
 using InbentorySystem.Data.Models;
+using InbentorySystem.Infrastructure.Interfaces;
 using Npgsql;
+using System;
 using System.Data;
+using System.Globalization;
 
 namespace InbentorySystem.Infrastructure.Repository
 {
@@ -122,32 +124,26 @@ namespace InbentorySystem.Infrastructure.Repository
         /// <exception cref="ApplicationException"></exception>
         // ShiireRepository.cs
 
-        public async Task<ShiireModel?> GetByDateAndCodeAsync(string date, string code)
+        public async Task<ShiireModel?> GetByDateAndCodeAsync(DateTime date, string code)
         {
-            // 日付変換チェック
-            if (!DateTime.TryParse(date, out DateTime parsedDate))
-            {
-                throw new ArgumentException("日付の形式が不正です");
-            }
-
             const string sql = @"
         SELECT 
             shiire_no AS ShiireNo,
-            shiire_bi::text AS ShiireBi, -- string型に合わせるためキャスト
+            shiire_bi AS ShiireBi,
             shohin_code AS ShohinCode,
             siiresaki_code AS ShiiresakiCode,
             suryo AS Quantity
         FROM t_shiire 
         WHERE 
-            shiire_bi = @ShiireNengappi  -- DB列名: shiire_bi
+            shiire_bi = @ShiireNengappi  
             AND 
-            shohin_code = @ShohinCode;   -- DB列名: shohin_code
+            shohin_code = @ShohinCode;   
     ";
 
             // パラメータ名 (@ShiireNengappi, @ShohinCode) と一致させる
             var parameters = new
             {
-                ShiireNengappi = parsedDate, // DateTime型で渡す
+                ShiireNengappi = date, 
                 ShohinCode = code
             };
 
@@ -173,14 +169,17 @@ namespace InbentorySystem.Infrastructure.Repository
         {
             shiire.Tourokunichiji = DateTime.Now;
 
-            if (!DateTime.TryParse(shiire.ShiireBi, out DateTime parsedShiireDate))
+            DateTime parsedShiireDate;
+            if (!shiire.ShiireBi.HasValue)
             {
-                throw new FormatException("仕入日付の書式が不正です。YYYY/MM/DD 形式で入力してください。");
+                throw new FormatException("仕入日付が設定されていません。");
             }
+
+            parsedShiireDate = shiire.ShiireBi.Value.Date;
 
             const string sql = @"
                 INSERT INTO t_shiire (shiire_bi, shohin_code, siiresaki_code, suryo)
-                VALUES (@ShiireNengappiParam, @ShohinCode, @ShiiresakiCode, @Quantity);
+                VALUES (@ShiireBiParam, @ShohinCode, @ShiiresakiCode, @Quantity);
 
                 INSERT INTO t_zaiko (shohin_code, suryo, koushin_nichiji)
                 VALUES (@ShohinCode, @Quantity, @Tourokunichiji)
@@ -221,27 +220,31 @@ namespace InbentorySystem.Infrastructure.Repository
         /// <returns>修正結果</returns>
         public async Task<int> UpdateAsync(ShiireModel shiire)
         {
-            if (!DateTime.TryParse(shiire.ShiireBi, out DateTime parsedShiireDate))
+            DateTime parsedShiireDate;
+            if (!shiire.ShiireBi.HasValue)
             {
-                throw new FormatException("仕入日付の書式が不正です。YYYY/MM/DD 形式で入力してください。");
+                throw new FormatException("仕入日付が設定されていません。");
+            }
+
+            parsedShiireDate = shiire.ShiireBi.Value.Date;
+
+            if (!int.TryParse(shiire.ShiireNo, out int shiireNoInt))
+            {
+                throw new InvalidOperationException("仕入番号の形式が不正です。");
             }
 
             const string getOldQuantitySql = @" 
             SELECT suryo FROM t_shiire 
-            WHERE shiire_bi = @ShiireNengappi 
-            AND
-            shohin_code = @ShohinCode;";
+            WHERE shiire_no = @ShiireNo;";
 
             const string updateShiireSql = @"
             UPDATE t_shiire SET
             shiire_bi = @ShiireNengappi,
             shohin_code = @ShohinCode,
             shiiresaki_code = @ShiiresakiCode, 
-            suryo = @Quantity, 
+            suryo = @Quantity
             WHERE
-            shiire_bi = @ShiireNengappi 
-            AND 
-            shohin_code = @ShohinCode;";
+            shiire_no = @ShiireNo;";
 
             const string updateZaikoSql = @"
             UPDATE t_zaiko SET 
@@ -250,13 +253,13 @@ namespace InbentorySystem.Infrastructure.Repository
             WHERE
             shohin_code = @ShohinCode;";
 
-            var shiireParam = new
+            var parameters = new
             {
+                ShiireNo = shiireNoInt,
                 ShiireNengappi = parsedShiireDate,
                 shiire.ShohinCode,
                 shiire.ShiiresakiCode,
                 shiire.Quantity
-            
             };
 
             using (var connection = _connectionFactory.CreateConnection())
@@ -266,14 +269,14 @@ namespace InbentorySystem.Infrastructure.Repository
                 {
                     try
                     {
-                        var oldQuantity = await _executor.QueryFirstOrDefaultAsync<int>(connection, getOldQuantitySql, shiireParam, transaction);
+                        var oldQuantity = await connection.QueryFirstOrDefaultAsync<int>(getOldQuantitySql, parameters, transaction);
                         var quantityDifference = (shiire.Quantity ?? 0) - oldQuantity;
 
-                        await connection.ExecuteAsync(updateShiireSql, shiire, transaction: transaction);
+                        await connection.ExecuteAsync(updateShiireSql, parameters, transaction: transaction);
 
                         var zaikoParam = new
                         {
-                            shiire.ShohinCode,
+                            parameters.ShohinCode,
                             QuantityDifference = quantityDifference,
                         };
 
@@ -299,23 +302,23 @@ namespace InbentorySystem.Infrastructure.Repository
         /// <param name="code">商品コード</param>
         /// <param name="quantity">数量</param>
         /// <returns>削除結果</returns>
-        public async Task<int> DeleteAsync(string date, string code, int quantity)
+        public async Task<int> DeleteAsync(DateTime date, string code, int quantity)
         {
             const string updateZaikoSql = @"
-                UPDATE T_ZAIKO SET
-                currentquantity = currentquantity - @Quantity, 
+                UPDATE t_zaiko SET
+                suryo = suryo - @Quantity, 
 
-                kousinnichiji = NOW() 
+                kousin_nichiji = NOW() 
                 WHERE
-                shohincode = @ShohinCode;";
+                shohin_code = @ShohinCode;";
 
             const string deleteShiireSql = @"
                 DELETE FROM
-                T_SHIIRE 
+                t_shiire 
                 WHERE
-                shiiresakinengappi = @ShiireNengappi 
+                shiire_bi = @ShiireNengappi 
                 AND
-                shohincode = @ShohinCode;";
+                shohin_code = @ShohinCode;";
 
             var parameters = new
             {
