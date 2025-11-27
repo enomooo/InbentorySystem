@@ -3,6 +3,7 @@ using InbentorySystem.Data.Models;
 using System;
 using System.Collections.Generic;
 using Xunit;
+using System.Net.WebSockets;
 
 namespace InbentorySystem.Tests.Unit.Services
 {
@@ -37,7 +38,7 @@ namespace InbentorySystem.Tests.Unit.Services
         }
 
         [Fact] // UT-SHSV-03: 修正前後のデータが正しく保持されること (SetLastEditResults)
-        public void SetLastEditResults_ShouldHoldAllEditProperties()
+        public void SetLastEditResultsShouldHoldAllEditProperties()
         {
             // ARRANGE 
             var original = new ShiireModel { ShohinCode = "S001", Quantity = 5 };
@@ -90,6 +91,58 @@ namespace InbentorySystem.Tests.Unit.Services
             var uri = _service.DetermineNavigationUri("2023-10-01", "S001", results, "Search");
 
             Assert.Null(uri);
+        }
+
+        [Fact] // UT-SHSV-07: SetLastEditResultsが修正前後の全てを保持すること
+        public void SetLastEditResults_ShouldHoldAllEditProperties()
+        {
+            // Arrange
+            var original = new ShiireModel { ShohinCode = "S001", Quantity = 5 };
+            var updated = new ShiireModel { ShohinCode = "S001", Quantity = 15 };
+
+            // ACT: 修正前在庫 50, 修正後在庫 60 をセット
+            _service.SetLastEditResults(original, updated, 50, 60);
+
+            Assert.Equal(original, _service.LastEditOriginalShiire);
+            Assert.Equal(updated, _service.LastEditedShiire);
+            Assert.Equal(50, _service.LastEditBeforeZaikoQuantity);
+            Assert.Equal(60, _service.LastEditAfterZaikoQuantity);
+        }
+
+        [Fact] // UT-SHSV-08: Clearメソッドが修正結果のプロパティをリセットすること
+        public void Clear_ShouldResetAllEditProperties()
+        {
+            // Arrange
+            _service.SetLastEditResults(_dummyShiire, _dummyShiire, 100, 95);
+
+            // Act
+            _service.Clear();
+
+            // Assert
+            Assert.Null(_service.LastEditOriginalShiire);
+            Assert.Null(_service.LastEditedShiire);
+            Assert.Null(_service.LastEditBeforeZaikoQuantity);
+            Assert.Null(_service.LastEditAfterZaikoQuantity);
+        }
+
+        [Fact] // UT-SHSV-09: 最終削除データが正しく保持されること (Set/GetLastDeletedShiire)
+        public void SetGetLastDeletedShiire_ShouldHoldModel()
+        {
+            _service.SetLastDeletedShiire(_dummyShiire);
+            Assert.Equal(_dummyShiire, _service.LastDeletedShiire);
+        }
+
+        [Fact] // UT-SHSV-10: 削除後のClearで全てリセットされること
+        public void Clear_ShouldResetAllStatePropertiesAfterDelete()
+        {
+            // Arrange
+            _service.SetLastDeletedShiire(_dummyShiire);
+
+            // Act
+            _service.Clear();
+
+            // Assert
+            Assert.Null(_service.LastDeletedShiire);
         }
     }
 }

@@ -139,7 +139,7 @@ namespace InbentorySystem.Tests.Integration.Shohin
             mockRepo.Setup(r => r.SearchByKeywordAsync("牛刀"))
                                .ReturnsAsync(new List<ShohinModel> { resultShohin });
 
-            var mockService = new Mock<IShohinService>();
+             var mockService = new Mock<IShohinService>();
 
             ctx.Services.AddSingleton(mockRepo.Object);
             ctx.Services.AddSingleton(mockService.Object);
